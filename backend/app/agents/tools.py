@@ -273,7 +273,7 @@ JSON Response:"""
         try:
             from google import genai
             client = genai.Client(api_key=key_to_use)
-            for model_name in ["gemini-2.5-flash", "gemini-2.0-flash"]:
+            for model_name in ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.6-flash", "gemini-flash-latest"]:
                 for attempt in range(2):
                     try:
                         response = client.models.generate_content(

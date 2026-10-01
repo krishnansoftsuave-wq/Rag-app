@@ -47,8 +47,10 @@ Detailed Answer:"""
                 from google import genai
                 client = genai.Client(api_key=key_to_use)
                 candidate_models = [
-                    "gemini-2.5-flash",
-                    "gemini-2.0-flash",
+                    "gemini-3.8-flash",
+                    "gemini-3.5-flash",
+                    "gemini-3.6-flash",
+                    "gemini-flash-latest",
                 ]
                 
                 for model_name in candidate_models:

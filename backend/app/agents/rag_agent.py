@@ -92,15 +92,26 @@ class AdaptiveRAGAgent:
                         return state
 
                     start_t = time.time()
-                    model_response = client.models.generate_content(
-                        model="gemini-2.5-flash",
-                        contents=contents,
-                        config=types.GenerateContentConfig(
-                            system_instruction=system_instruction,
-                            tools=EXPOSED_TOOL_FUNCTIONS,
-                            temperature=0.2
-                        )
-                    )
+                    model_response = None
+                    for model_name in ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.6-flash", "gemini-flash-latest"]:
+                        try:
+                            model_response = client.models.generate_content(
+                                model=model_name,
+                                contents=contents,
+                                config=types.GenerateContentConfig(
+                                    system_instruction=system_instruction,
+                                    tools=EXPOSED_TOOL_FUNCTIONS,
+                                    temperature=0.2
+                                )
+                            )
+                            if model_response:
+                                break
+                        except Exception:
+                            continue
+
+                    if not model_response:
+                        raise RuntimeError("Failed to generate response from Gemini API models")
+
                     latency_ms = (time.time() - start_t) * 1000
 
                     # Calculate LLM usage

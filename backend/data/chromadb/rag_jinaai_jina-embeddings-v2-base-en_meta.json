@@ -7,5 +7,14 @@
     "file_size": 30315,
     "total_chunks": 13,
     "chunking_strategy": "agentic"
+  },
+  "novacloud_eval_doc": {
+    "doc_id": "novacloud_eval_doc",
+    "filename": "NovaCloud_RAG_Evaluation_Document.txt",
+    "file_type": ".txt",
+    "upload_time": "2026-10-01T15:00:23.933005",
+    "file_size": 16039,
+    "total_chunks": 37,
+    "chunking_strategy": "standard"
   }
 }

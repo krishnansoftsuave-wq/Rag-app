@@ -89,7 +89,7 @@ Example format:
   {{"start_index": 4, "end_index": 8}}
 ]
 """
-        candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.5-pro"]
+        candidate_models = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.6-flash", "gemini-flash-latest"]
         response_text = None
 
         for model_name in candidate_models:

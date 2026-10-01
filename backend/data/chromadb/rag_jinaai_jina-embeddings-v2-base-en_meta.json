@@ -1,0 +1,11 @@
+{
+  "c53fb635": {
+    "doc_id": "c53fb635",
+    "filename": "RAG_Test_Knowledge_Base_2.pdf",
+    "file_type": ".pdf",
+    "upload_time": "2026-09-24 20:35:51",
+    "file_size": 30315,
+    "total_chunks": 13,
+    "chunking_strategy": "agentic"
+  }
+}

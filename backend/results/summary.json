@@ -1,0 +1,2427 @@
+{
+  "agent": {
+    "pass_rate": 80.0,
+    "outcome_pass_rate": 80.0,
+    "trajectory_pass_rate": 80.0,
+    "outcome_vs_trajectory_gap": 0.0,
+    "tool_choice_accuracy": 100.0,
+    "argument_validity_rate": 100.0,
+    "step_efficiency": 0.93,
+    "p50_latency_ms": 3367.66,
+    "cost_p50": 0.000204,
+    "cost_max": 0.000238,
+    "total_tokens": 14257,
+    "total_cost": 0.002092,
+    "cost_per_question": 0.000209,
+    "total_questions": 10,
+    "failure_modes": {
+      "Wrong tool choice": 0,
+      "Invalid arguments": 0,
+      "Excessive steps": 0,
+      "Poor re-planning": 0,
+      "Other trajectory failures": 0
+    },
+    "gap_cases": [
+      {
+        "question_id": "Q9",
+        "question": "What specific steps occur during evidence validation and query refinement when initial retrieval is insufficient?",
+        "actual_trajectory": [
+          "search_document",
+          "validate_evidence",
+          "generate_answer"
+        ],
+        "expected_trajectory": [
+          "search_document",
+          "validate_evidence",
+          "refine_document_search",
+          "validate_evidence",
+          "generate_answer"
+        ],
+        "reason": "Trajectory mismatch"
+      },
+      {
+        "question_id": "Q10",
+        "question": "Trace the end-to-end multi-hop retrieval and generation process for answering a complex query.",
+        "actual_trajectory": [
+          "search_document",
+          "validate_evidence",
+          "generate_answer"
+        ],
+        "expected_trajectory": [
+          "search_document",
+          "validate_evidence",
+          "refine_document_search",
+          "validate_evidence",
+          "generate_answer"
+        ],
+        "reason": "Trajectory mismatch"
+      }
+    ]
+  },
+  "workflow": {
+    "pass_rate": 90.0,
+    "outcome_pass_rate": 90.0,
+    "trajectory_pass_rate": 70.0,
+    "outcome_vs_trajectory_gap": 20.0,
+    "tool_choice_accuracy": 80.0,
+    "argument_validity_rate": 100.0,
+    "step_efficiency": 1.4,
+    "p50_latency_ms": 2683.32,
+    "cost_p50": 0.000244,
+    "cost_max": 0.000308,
+    "total_tokens": 16575,
+    "total_cost": 0.002448,
+    "cost_per_question": 0.000245,
+    "total_questions": 10,
+    "failure_modes": {
+      "Wrong tool choice": 3,
+      "Invalid arguments": 0,
+      "Excessive steps": 0,
+      "Poor re-planning": 0,
+      "Other trajectory failures": 0
+    },
+    "gap_cases": [
+      {
+        "question_id": "Q1",
+        "question": "What core technologies power DocuBrain's vector search and LLM synthesis?",
+        "actual_trajectory": [
+          "search_document",
+          "refine_document_search",
+          "validate_evidence",
+          "generate_answer"
+        ],
+        "expected_trajectory": [
+          "search_document",
+          "validate_evidence",
+          "generate_answer"
+        ],
+        "reason": "Wrong tool choice"
+      },
+      {
+        "question_id": "Q2",
+        "question": "What is the default chunk size and overlap configuration in DocuBrain?",
+        "actual_trajectory": [
+          "search_document",
+          "refine_document_search",
+          "validate_evidence",
+          "generate_answer"
+        ],
+        "expected_trajectory": [
+          "search_document",
+          "validate_evidence",
+          "generate_answer"
+        ],
+        "reason": "Wrong tool choice"
+      },
+      {
+        "question_id": "Q3",
+        "question": "What sparse lexical retrieval algorithm is used alongside dense vector embeddings?",
+        "actual_trajectory": [
+          "search_document",
+          "refine_document_search",
+          "validate_evidence",
+          "generate_answer"
+        ],
+        "expected_trajectory": [
+          "search_document",
+          "validate_evidence",
+          "generate_answer"
+        ],
+        "reason": "Wrong tool choice"
+      }
+    ]
+  },
+  "verdict": "Original Agent achieved 80.0% outcome pass rate (trajectory pass: 80.0%, gap: 0.0%) with P50 latency of 3368ms and cost P50 of $0.000204. Fixed Agent (Workflow) achieved 90.0% outcome pass rate (trajectory pass: 70.0%, gap: 20.0%) with P50 latency of 2683ms and cost P50 of $0.000244.",
+  "comparison_table": {
+    "tool_choice_accuracy": {
+      "original_agent": "100.0%",
+      "fixed_agent": "80.0%"
+    },
+    "argument_validity_rate": {
+      "original_agent": "100.0%",
+      "fixed_agent": "100.0%"
+    },
+    "step_efficiency": {
+      "original_agent": 0.93,
+      "fixed_agent": 1.4
+    },
+    "cost_p50": {
+      "original_agent": "$0.000204",
+      "fixed_agent": "$0.000244"
+    },
+    "cost_max": {
+      "original_agent": "$0.000238",
+      "fixed_agent": "$0.000308"
+    },
+    "outcome_pass_rate": {
+      "original_agent": "80.0%",
+      "fixed_agent": "90.0%"
+    },
+    "trajectory_pass_rate": {
+      "original_agent": "80.0%",
+      "fixed_agent": "70.0%"
+    },
+    "outcome_vs_trajectory_gap": {
+      "original_agent": "0.0%",
+      "fixed_agent": "20.0%"
+    }
+  },
+  "mitigation_price": {
+    "mitigation_description": "Replacing dynamic agent with deterministic Fixed RAG Workflow",
+    "latency_delta_ms": -684.34,
+    "token_delta_per_question": 231.8,
+    "cost_delta_per_question": 3.6e-05,
+    "outcome_pass_rate_delta": 10.0,
+    "trajectory_pass_rate_delta": -10.0
+  },
+  "regression_matrix": [
+    {
+      "failure_mode": "Wrong tool choice",
+      "original_agent": 0,
+      "fixed_agent": 3,
+      "change": "+3"
+    },
+    {
+      "failure_mode": "Invalid arguments",
+      "original_agent": 0,
+      "fixed_agent": 0,
+      "change": "0"
+    },
+    {
+      "failure_mode": "Excessive steps",
+      "original_agent": 0,
+      "fixed_agent": 0,
+      "change": "0"
+    },
+    {
+      "failure_mode": "Poor re-planning",
+      "original_agent": 0,
+      "fixed_agent": 0,
+      "change": "0"
+    },
+    {
+      "failure_mode": "Other trajectory failures",
+      "original_agent": 0,
+      "fixed_agent": 0,
+      "change": "0"
+    }
+  ],
+  "agent_question_results": [
+    {
+      "system": "agent",
+      "question_id": "Q1",
+      "question": "What core technologies power DocuBrain's vector search and LLM synthesis?",
+      "question_type": "simple_factual",
+      "passed": true,
+      "score": 0.78,
+      "latency_ms": 17381.76,
+      "input_tokens": 947,
+      "output_tokens": 442,
+      "total_tokens": 1389,
+      "cost": 0.000204,
+      "iterations": 3,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt**:\n\n**From `docubrain_kb.txt` (Chunk #0, Relevance: 100%)**:\n> \"DocuBrain Knowledge Base & System Specification  1. Core Architecture & Technologies: DocuBrain is an enterprise Retrieval-Augmented Generation (RAG) platform. It uses ChromaDB with SentenceTransformers (jinaai/jina-embeddings-v2-base-en or all-MiniLM-L6-v2) for high-performance dense vector search....\"\n\n**From `docubrain_kb.txt` (Chunk #3, Relevance: 98%)**:\n> \"4. Hybrid Search & Reciprocal Rank Fusion (RRF): DocuBrain combines dense vector search and BM25 sparse keyword retrieval using Reciprocal Rank Fusion (RRF). RRF calculates a fused rank score for each chunk by summing inverse rank positions: score = 0.5 / (60 + rank). The top fused results are passe...\"\n\n**From `docubrain_kb.txt` (Chunk #4, Relevance: 96%)**:\n> \"5. Gemini LLM & Local Fallback Mode: When no Gemini API key is provided or network is offline, DocuBrain operates in Smart Local Fallback Mode. Local Fallback Mode extracts structured text snippets and relevance scores directly from top chunks into a summary without calling external LLM APIs.  6. De...\"\n\n**From `docubrain_kb.txt` (Chunk #6, Relevance: 95%)**:\n> \"8. End-to-End Multi-Hop Retrieval: For multi-hop queries, initial search retrieves primary context, evidence validation identifies gaps, refined search fetches secondary details across sections, and the unified context is passed to the LLM for citation-backed synthesis.\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='What core technologies power DocuBrain's vector search and LLM synthesis?'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 5852.04,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What core technologies power DocuBrain's vector search and LLM synthesis?",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1630",
+          "result_summary": "sufficient=True missing_count=0",
+          "latency_ms": 1142.32,
+          "input_tokens": 522,
+          "output_tokens": 40,
+          "total_tokens": 562,
+          "step_cost": 5.1e-05,
+          "cumulative_cost": 5.1e-05,
+          "raw_args": {
+            "question": "What core technologies power DocuBrain's vector search and LLM synthesis?",
+            "retrieved_context_len": 1630
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "generate_answer",
+          "input_summary": "citations_count=4",
+          "result_summary": "answer_length=1607 fallback=True",
+          "latency_ms": 1255.77,
+          "input_tokens": 425,
+          "output_tokens": 402,
+          "total_tokens": 827,
+          "step_cost": 0.000152,
+          "cumulative_cost": 0.000204,
+          "raw_args": {
+            "question": "What core technologies power DocuBrain's vector search and LLM synthesis?",
+            "sources_count": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 2,
+      "correct_tool_decisions": 2,
+      "total_tool_arguments": 3,
+      "valid_tool_arguments": 3,
+      "steps_taken": 2,
+      "expected_steps": 2,
+      "step_efficiency": 1.0,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    },
+    {
+      "system": "agent",
+      "question_id": "Q2",
+      "question": "What is the default chunk size and overlap configuration in DocuBrain?",
+      "question_type": "simple_factual",
+      "passed": true,
+      "score": 1.0,
+      "latency_ms": 3501.4,
+      "input_tokens": 973,
+      "output_tokens": 461,
+      "total_tokens": 1434,
+      "cost": 0.000211,
+      "iterations": 3,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt, RAG_Test_Knowledge_Base.pdf**:\n\n**From `docubrain_kb.txt` (Chunk #1, Relevance: 100%)**:\n> \"2. Document Upload & Chunking Configurations: DocuBrain supports 4 document chunking strategies: Standard, Semantic, Agentic, and Late Chunking. The default chunk size is 600 characters with an overlap of 80 characters. When uploading via /api/upload, text is extracted from PDF, DOCX, TXT, or MD fil...\"\n\n**From `docubrain_kb.txt` (Chunk #3, Relevance: 95%)**:\n> \"4. Hybrid Search & Reciprocal Rank Fusion (RRF): DocuBrain combines dense vector search and BM25 sparse keyword retrieval using Reciprocal Rank Fusion (RRF). RRF calculates a fused rank score for each chunk by summing inverse rank positions: score = 0.5 / (60 + rank). The top fused results are passe...\"\n\n**From `RAG_Test_Knowledge_Base.pdf` (Chunk #7, Relevance: 94%)**:\n> \"search, the client must use pagination. The default page size is 20 orders. The maximum supported page size is 50. Search results are sorted by order creation time in descending order by default. 11. Address Changes A customer can change the shipping address while an order is Pending or Confirmed. O...\"\n\n**From `docubrain_kb.txt` (Chunk #0, Relevance: 94%)**:\n> \"DocuBrain Knowledge Base & System Specification  1. Core Architecture & Technologies: DocuBrain is an enterprise Retrieval-Augmented Generation (RAG) platform. It uses ChromaDB with SentenceTransformers (jinaai/jina-embeddings-v2-base-en or all-MiniLM-L6-v2) for high-performance dense vector search....\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='What is the default chunk size and overlap configuration in DocuBrain?'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 46.49,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What is the default chunk size and overlap configuration in DocuBrain?",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1684",
+          "result_summary": "sufficient=True missing_count=0",
+          "latency_ms": 1237.4,
+          "input_tokens": 535,
+          "output_tokens": 40,
+          "total_tokens": 575,
+          "step_cost": 5.2e-05,
+          "cumulative_cost": 5.2e-05,
+          "raw_args": {
+            "question": "What is the default chunk size and overlap configuration in DocuBrain?",
+            "retrieved_context_len": 1684
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "generate_answer",
+          "input_summary": "citations_count=4",
+          "result_summary": "answer_length=1680 fallback=True",
+          "latency_ms": 1217.08,
+          "input_tokens": 438,
+          "output_tokens": 421,
+          "total_tokens": 859,
+          "step_cost": 0.000159,
+          "cumulative_cost": 0.000211,
+          "raw_args": {
+            "question": "What is the default chunk size and overlap configuration in DocuBrain?",
+            "sources_count": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 2,
+      "correct_tool_decisions": 2,
+      "total_tool_arguments": 3,
+      "valid_tool_arguments": 3,
+      "steps_taken": 2,
+      "expected_steps": 2,
+      "step_efficiency": 1.0,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    },
+    {
+      "system": "agent",
+      "question_id": "Q3",
+      "question": "What sparse lexical retrieval algorithm is used alongside dense vector embeddings?",
+      "question_type": "simple_factual",
+      "passed": true,
+      "score": 0.57,
+      "latency_ms": 3246.67,
+      "input_tokens": 899,
+      "output_tokens": 453,
+      "total_tokens": 1352,
+      "cost": 0.000203,
+      "iterations": 3,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt, RAG_Test_Knowledge_Base.pdf**:\n\n**From `docubrain_kb.txt` (Chunk #3, Relevance: 100%)**:\n> \"4. Hybrid Search & Reciprocal Rank Fusion (RRF): DocuBrain combines dense vector search and BM25 sparse keyword retrieval using Reciprocal Rank Fusion (RRF). RRF calculates a fused rank score for each chunk by summing inverse rank positions: score = 0.5 / (60 + rank). The top fused results are passe...\"\n\n**From `docubrain_kb.txt` (Chunk #0, Relevance: 100%)**:\n> \"DocuBrain Knowledge Base & System Specification  1. Core Architecture & Technologies: DocuBrain is an enterprise Retrieval-Augmented Generation (RAG) platform. It uses ChromaDB with SentenceTransformers (jinaai/jina-embeddings-v2-base-en or all-MiniLM-L6-v2) for high-performance dense vector search....\"\n\n**From `docubrain_kb.txt` (Chunk #6, Relevance: 96%)**:\n> \"8. End-to-End Multi-Hop Retrieval: For multi-hop queries, initial search retrieves primary context, evidence validation identifies gaps, refined search fetches secondary details across sections, and the unified context is passed to the LLM for citation-backed synthesis.\"\n\n**From `RAG_Test_Knowledge_Base.pdf` (Chunk #4, Relevance: 92%)**:\n> \"Support tickets are assigned one of three priorities. High priority is used for payment failures on an order that cannot be completed, duplicate charges, or orders marked Delivered but not received. Medium priority is used for delayed shipments and refund requests that have exceeded the normal proce...\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='What sparse lexical retrieval algorithm is used alongside dense vector embeddings?'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 42.86,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What sparse lexical retrieval algorithm is used alongside dense vector embeddings?",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1525",
+          "result_summary": "sufficient=True missing_count=0",
+          "latency_ms": 1214.46,
+          "input_tokens": 498,
+          "output_tokens": 40,
+          "total_tokens": 538,
+          "step_cost": 4.9e-05,
+          "cumulative_cost": 4.9e-05,
+          "raw_args": {
+            "question": "What sparse lexical retrieval algorithm is used alongside dense vector embeddings?",
+            "retrieved_context_len": 1525
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "generate_answer",
+          "input_summary": "citations_count=4",
+          "result_summary": "answer_length=1648 fallback=True",
+          "latency_ms": 1149.19,
+          "input_tokens": 401,
+          "output_tokens": 413,
+          "total_tokens": 814,
+          "step_cost": 0.000154,
+          "cumulative_cost": 0.000203,
+          "raw_args": {
+            "question": "What sparse lexical retrieval algorithm is used alongside dense vector embeddings?",
+            "sources_count": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 2,
+      "correct_tool_decisions": 2,
+      "total_tool_arguments": 3,
+      "valid_tool_arguments": 3,
+      "steps_taken": 2,
+      "expected_steps": 2,
+      "step_efficiency": 1.0,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    },
+    {
+      "system": "agent",
+      "question_id": "Q4",
+      "question": "Summarize the document upload and chunking workflow across both backend and frontend.",
+      "question_type": "multi_section",
+      "passed": false,
+      "score": 0.32,
+      "latency_ms": 3509.84,
+      "input_tokens": 1312,
+      "output_tokens": 464,
+      "total_tokens": 1776,
+      "cost": 0.000238,
+      "iterations": 3,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt, Krishnan_React_3+_Profile.docx.pdf**:\n\n**From `docubrain_kb.txt` (Chunk #1, Relevance: 100%)**:\n> \"2. Document Upload & Chunking Configurations: DocuBrain supports 4 document chunking strategies: Standard, Semantic, Agentic, and Late Chunking. The default chunk size is 600 characters with an overlap of 80 characters. When uploading via /api/upload, text is extracted from PDF, DOCX, TXT, or MD fil...\"\n\n**From `docubrain_kb.txt` (Chunk #2, Relevance: 97%)**:\n> \"3. Chunking Strategy Comparison: Standard Chunking uses recursive character splitting which can fragment context at chunk boundaries. Late Chunking passes the full text through transformer embedding layers first before pool-averaging chunk spans, preserving global document context across chunk bound...\"\n\n**From `docubrain_kb.txt` (Chunk #5, Relevance: 94%)**:\n> \"7. Evidence Validation & Query Refinement Workflow: In the adaptive RAG agent loop, validate_evidence evaluates context sufficiency. If evidence is insufficient, it identifies missing information topics, triggers refine_document_search with a targeted refined query, accumulates new evidence, and re-...\"\n\n**From `Krishnan_React_3+_Profile.docx.pdf` (Chunk #2, Relevance: 93%)**:\n> \"[Page 3]       RECENT  PROFESSIONAL  EXPERIENCE:   Project  Name:  Trames   Technologies:  ReactJS,,  TypeScript,  Redux  JS,  HTML5,  CSS3,  AWS,  ,  Postman.   Project  Management  Tool:  Monday.com   Description:   \u25cf  TRAMES  is  a  shipping/Cargo  management-based  web  application.  \u25cf  Track  &...\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='Summarize the document upload and chunking workflow across both backend and frontend.'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 51.8,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "Summarize the document upload and chunking workflow across both backend and frontend.",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "validate_evidence",
+          "input_summary": "context_length=2348",
+          "result_summary": "sufficient=True missing_count=0",
+          "latency_ms": 1228.09,
+          "input_tokens": 705,
+          "output_tokens": 40,
+          "total_tokens": 745,
+          "step_cost": 6.5e-05,
+          "cumulative_cost": 6.5e-05,
+          "raw_args": {
+            "question": "Summarize the document upload and chunking workflow across both backend and frontend.",
+            "retrieved_context_len": 2348
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "generate_answer",
+          "input_summary": "citations_count=4",
+          "result_summary": "answer_length=1694 fallback=True",
+          "latency_ms": 1354.7,
+          "input_tokens": 607,
+          "output_tokens": 424,
+          "total_tokens": 1031,
+          "step_cost": 0.000173,
+          "cumulative_cost": 0.000238,
+          "raw_args": {
+            "question": "Summarize the document upload and chunking workflow across both backend and frontend.",
+            "sources_count": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 2,
+      "correct_tool_decisions": 2,
+      "total_tool_arguments": 3,
+      "valid_tool_arguments": 3,
+      "steps_taken": 2,
+      "expected_steps": 2,
+      "step_efficiency": 1.0,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    },
+    {
+      "system": "agent",
+      "question_id": "Q5",
+      "question": "Compare Standard Chunking versus Late Chunking in terms of context preservation across chunk boundaries.",
+      "question_type": "comparison",
+      "passed": true,
+      "score": 0.88,
+      "latency_ms": 3313.41,
+      "input_tokens": 806,
+      "output_tokens": 442,
+      "total_tokens": 1248,
+      "cost": 0.000193,
+      "iterations": 3,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt**:\n\n**From `docubrain_kb.txt` (Chunk #2, Relevance: 100%)**:\n> \"3. Chunking Strategy Comparison: Standard Chunking uses recursive character splitting which can fragment context at chunk boundaries. Late Chunking passes the full text through transformer embedding layers first before pool-averaging chunk spans, preserving global document context across chunk bound...\"\n\n**From `docubrain_kb.txt` (Chunk #6, Relevance: 97%)**:\n> \"8. End-to-End Multi-Hop Retrieval: For multi-hop queries, initial search retrieves primary context, evidence validation identifies gaps, refined search fetches secondary details across sections, and the unified context is passed to the LLM for citation-backed synthesis.\"\n\n**From `docubrain_kb.txt` (Chunk #1, Relevance: 96%)**:\n> \"2. Document Upload & Chunking Configurations: DocuBrain supports 4 document chunking strategies: Standard, Semantic, Agentic, and Late Chunking. The default chunk size is 600 characters with an overlap of 80 characters. When uploading via /api/upload, text is extracted from PDF, DOCX, TXT, or MD fil...\"\n\n**From `docubrain_kb.txt` (Chunk #5, Relevance: 95%)**:\n> \"7. Evidence Validation & Query Refinement Workflow: In the adaptive RAG agent loop, validate_evidence evaluates context sufficiency. If evidence is insufficient, it identifies missing information topics, triggers refine_document_search with a targeted refined query, accumulates new evidence, and re-...\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='Compare Standard Chunking versus Late Chunking in terms of context preservation across chunk boundaries.'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 55.42,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "Compare Standard Chunking versus Late Chunking in terms of context preservation across chunk boundaries.",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1316",
+          "result_summary": "sufficient=True missing_count=0",
+          "latency_ms": 1199.69,
+          "input_tokens": 452,
+          "output_tokens": 40,
+          "total_tokens": 492,
+          "step_cost": 4.6e-05,
+          "cumulative_cost": 4.6e-05,
+          "raw_args": {
+            "question": "Compare Standard Chunking versus Late Chunking in terms of context preservation across chunk boundaries.",
+            "retrieved_context_len": 1316
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "generate_answer",
+          "input_summary": "citations_count=4",
+          "result_summary": "answer_length=1607 fallback=True",
+          "latency_ms": 1127.51,
+          "input_tokens": 354,
+          "output_tokens": 402,
+          "total_tokens": 756,
+          "step_cost": 0.000147,
+          "cumulative_cost": 0.000193,
+          "raw_args": {
+            "question": "Compare Standard Chunking versus Late Chunking in terms of context preservation across chunk boundaries.",
+            "sources_count": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 2,
+      "correct_tool_decisions": 2,
+      "total_tool_arguments": 3,
+      "valid_tool_arguments": 3,
+      "steps_taken": 2,
+      "expected_steps": 2,
+      "step_efficiency": 1.0,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    },
+    {
+      "system": "agent",
+      "question_id": "Q6",
+      "question": "How does Reciprocal Rank Fusion (RRF) combine scores from vector search and BM25 search?",
+      "question_type": "multi_section",
+      "passed": true,
+      "score": 0.81,
+      "latency_ms": 3283.48,
+      "input_tokens": 863,
+      "output_tokens": 442,
+      "total_tokens": 1305,
+      "cost": 0.000197,
+      "iterations": 3,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt**:\n\n**From `docubrain_kb.txt` (Chunk #3, Relevance: 100%)**:\n> \"4. Hybrid Search & Reciprocal Rank Fusion (RRF): DocuBrain combines dense vector search and BM25 sparse keyword retrieval using Reciprocal Rank Fusion (RRF). RRF calculates a fused rank score for each chunk by summing inverse rank positions: score = 0.5 / (60 + rank). The top fused results are passe...\"\n\n**From `docubrain_kb.txt` (Chunk #0, Relevance: 98%)**:\n> \"DocuBrain Knowledge Base & System Specification  1. Core Architecture & Technologies: DocuBrain is an enterprise Retrieval-Augmented Generation (RAG) platform. It uses ChromaDB with SentenceTransformers (jinaai/jina-embeddings-v2-base-en or all-MiniLM-L6-v2) for high-performance dense vector search....\"\n\n**From `docubrain_kb.txt` (Chunk #6, Relevance: 95%)**:\n> \"8. End-to-End Multi-Hop Retrieval: For multi-hop queries, initial search retrieves primary context, evidence validation identifies gaps, refined search fetches secondary details across sections, and the unified context is passed to the LLM for citation-backed synthesis.\"\n\n**From `docubrain_kb.txt` (Chunk #1, Relevance: 92%)**:\n> \"2. Document Upload & Chunking Configurations: DocuBrain supports 4 document chunking strategies: Standard, Semantic, Agentic, and Late Chunking. The default chunk size is 600 characters with an overlap of 80 characters. When uploading via /api/upload, text is extracted from PDF, DOCX, TXT, or MD fil...\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='How does Reciprocal Rank Fusion (RRF) combine scores from vector search and BM25 search?'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 64.66,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "How does Reciprocal Rank Fusion (RRF) combine scores from vector search and BM25 search?",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1446",
+          "result_summary": "sufficient=True missing_count=0",
+          "latency_ms": 1180.21,
+          "input_tokens": 480,
+          "output_tokens": 40,
+          "total_tokens": 520,
+          "step_cost": 4.8e-05,
+          "cumulative_cost": 4.8e-05,
+          "raw_args": {
+            "question": "How does Reciprocal Rank Fusion (RRF) combine scores from vector search and BM25 search?",
+            "retrieved_context_len": 1446
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "generate_answer",
+          "input_summary": "citations_count=4",
+          "result_summary": "answer_length=1607 fallback=True",
+          "latency_ms": 1218.58,
+          "input_tokens": 383,
+          "output_tokens": 402,
+          "total_tokens": 785,
+          "step_cost": 0.000149,
+          "cumulative_cost": 0.000197,
+          "raw_args": {
+            "question": "How does Reciprocal Rank Fusion (RRF) combine scores from vector search and BM25 search?",
+            "sources_count": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 2,
+      "correct_tool_decisions": 2,
+      "total_tool_arguments": 3,
+      "valid_tool_arguments": 3,
+      "steps_taken": 2,
+      "expected_steps": 2,
+      "step_efficiency": 1.0,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    },
+    {
+      "system": "agent",
+      "question_id": "Q7",
+      "question": "How does Gemini API online execution compare with Local Fallback Mode when no API key is provided?",
+      "question_type": "comparison",
+      "passed": true,
+      "score": 0.59,
+      "latency_ms": 3501.54,
+      "input_tokens": 1133,
+      "output_tokens": 477,
+      "total_tokens": 1610,
+      "cost": 0.000228,
+      "iterations": 3,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt, RAG_Test_Knowledge_Base.pdf, Acme_Subscription_Platform_Dataset2.txt**:\n\n**From `docubrain_kb.txt` (Chunk #4, Relevance: 100%)**:\n> \"5. Gemini LLM & Local Fallback Mode: When no Gemini API key is provided or network is offline, DocuBrain operates in Smart Local Fallback Mode. Local Fallback Mode extracts structured text snippets and relevance scores directly from top chunks into a summary without calling external LLM APIs.  6. De...\"\n\n**From `RAG_Test_Knowledge_Base.pdf` (Chunk #7, Relevance: 85%)**:\n> \"search, the client must use pagination. The default page size is 20 orders. The maximum supported page size is 50. Search results are sorted by order creation time in descending order by default. 11. Address Changes A customer can change the shipping address while an order is Pending or Confirmed. O...\"\n\n**From `Acme_Subscription_Platform_Dataset2.txt` (Chunk #5, Relevance: 49%)**:\n> \"API Authentication API requests use bearer tokens in the Authorization header as 'Bearer '. Tokens must not be placed in URL query parameters. A workspace can have up to five active API tokens.  11. Webhooks Failed webhook deliveries are retried up to three times, approximately after 1 minute, 5 min...\"\n\n**From `docubrain_kb.txt` (Chunk #0, Relevance: 49%)**:\n> \"DocuBrain Knowledge Base & System Specification  1. Core Architecture & Technologies: DocuBrain is an enterprise Retrieval-Augmented Generation (RAG) platform. It uses ChromaDB with SentenceTransformers (jinaai/jina-embeddings-v2-base-en or all-MiniLM-L6-v2) for high-performance dense vector search....\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='How does Gemini API online execution compare with Local Fallback Mode when no API key is provided?'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 48.51,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "How does Gemini API online execution compare with Local Fallback Mode when no API key is provided?",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1976",
+          "result_summary": "sufficient=True missing_count=0",
+          "latency_ms": 1159.02,
+          "input_tokens": 615,
+          "output_tokens": 40,
+          "total_tokens": 655,
+          "step_cost": 5.8e-05,
+          "cumulative_cost": 5.8e-05,
+          "raw_args": {
+            "question": "How does Gemini API online execution compare with Local Fallback Mode when no API key is provided?",
+            "retrieved_context_len": 1976
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "generate_answer",
+          "input_summary": "citations_count=4",
+          "result_summary": "answer_length=1744 fallback=True",
+          "latency_ms": 1338.09,
+          "input_tokens": 518,
+          "output_tokens": 437,
+          "total_tokens": 955,
+          "step_cost": 0.00017,
+          "cumulative_cost": 0.000228,
+          "raw_args": {
+            "question": "How does Gemini API online execution compare with Local Fallback Mode when no API key is provided?",
+            "sources_count": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 2,
+      "correct_tool_decisions": 2,
+      "total_tool_arguments": 3,
+      "valid_tool_arguments": 3,
+      "steps_taken": 2,
+      "expected_steps": 2,
+      "step_efficiency": 1.0,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    },
+    {
+      "system": "agent",
+      "question_id": "Q8",
+      "question": "What happens when system credentials or authentication fail during deployment?",
+      "question_type": "ambiguous",
+      "passed": false,
+      "score": 0.31,
+      "latency_ms": 3321.07,
+      "input_tokens": 1068,
+      "output_tokens": 478,
+      "total_tokens": 1546,
+      "cost": 0.000224,
+      "iterations": 3,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt, Acme_Subscription_Platform_Dataset2.txt**:\n\n**From `docubrain_kb.txt` (Chunk #4, Relevance: 100%)**:\n> \"5. Gemini LLM & Local Fallback Mode: When no Gemini API key is provided or network is offline, DocuBrain operates in Smart Local Fallback Mode. Local Fallback Mode extracts structured text snippets and relevance scores directly from top chunks into a summary without calling external LLM APIs.  6. De...\"\n\n**From `Acme_Subscription_Platform_Dataset2.txt` (Chunk #5, Relevance: 97%)**:\n> \"API Authentication API requests use bearer tokens in the Authorization header as 'Bearer '. Tokens must not be placed in URL query parameters. A workspace can have up to five active API tokens.  11. Webhooks Failed webhook deliveries are retried up to three times, approximately after 1 minute, 5 min...\"\n\n**From `Acme_Subscription_Platform_Dataset2.txt` (Chunk #5, Relevance: 96%)**:\n> \"API Authentication API requests use bearer tokens in the Authorization header as 'Bearer '. Tokens must not be placed in URL query parameters. A workspace can have up to five active API tokens.  11. Webhooks Failed webhook deliveries are retried up to three times, approximately after 1 minute, 5 min...\"\n\n**From `Acme_Subscription_Platform_Dataset2.txt` (Chunk #5, Relevance: 94%)**:\n> \"API Authentication API requests use bearer tokens in the Authorization header as 'Bearer '. Tokens must not be placed in URL query parameters. A workspace can have up to five active API tokens.  11. Webhooks Failed webhook deliveries are retried up to three times, approximately after 1 minute, 5 min...\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='What happens when system credentials or authentication fail during deployment?'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 46.49,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What happens when system credentials or authentication fail during deployment?",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1867",
+          "result_summary": "sufficient=True missing_count=0",
+          "latency_ms": 1220.13,
+          "input_tokens": 583,
+          "output_tokens": 40,
+          "total_tokens": 623,
+          "step_cost": 5.6e-05,
+          "cumulative_cost": 5.6e-05,
+          "raw_args": {
+            "question": "What happens when system credentials or authentication fail during deployment?",
+            "retrieved_context_len": 1867
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "generate_answer",
+          "input_summary": "citations_count=4",
+          "result_summary": "answer_length=1750 fallback=True",
+          "latency_ms": 1251.59,
+          "input_tokens": 485,
+          "output_tokens": 438,
+          "total_tokens": 923,
+          "step_cost": 0.000168,
+          "cumulative_cost": 0.000224,
+          "raw_args": {
+            "question": "What happens when system credentials or authentication fail during deployment?",
+            "sources_count": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 2,
+      "correct_tool_decisions": 2,
+      "total_tool_arguments": 3,
+      "valid_tool_arguments": 3,
+      "steps_taken": 2,
+      "expected_steps": 2,
+      "step_efficiency": 1.0,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    },
+    {
+      "system": "agent",
+      "question_id": "Q9",
+      "question": "What specific steps occur during evidence validation and query refinement when initial retrieval is insufficient?",
+      "question_type": "query_refinement",
+      "passed": true,
+      "score": 0.8,
+      "latency_ms": 3414.25,
+      "input_tokens": 861,
+      "output_tokens": 442,
+      "total_tokens": 1303,
+      "cost": 0.000197,
+      "iterations": 3,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt**:\n\n**From `docubrain_kb.txt` (Chunk #5, Relevance: 100%)**:\n> \"7. Evidence Validation & Query Refinement Workflow: In the adaptive RAG agent loop, validate_evidence evaluates context sufficiency. If evidence is insufficient, it identifies missing information topics, triggers refine_document_search with a targeted refined query, accumulates new evidence, and re-...\"\n\n**From `docubrain_kb.txt` (Chunk #6, Relevance: 98%)**:\n> \"8. End-to-End Multi-Hop Retrieval: For multi-hop queries, initial search retrieves primary context, evidence validation identifies gaps, refined search fetches secondary details across sections, and the unified context is passed to the LLM for citation-backed synthesis.\"\n\n**From `docubrain_kb.txt` (Chunk #3, Relevance: 93%)**:\n> \"4. Hybrid Search & Reciprocal Rank Fusion (RRF): DocuBrain combines dense vector search and BM25 sparse keyword retrieval using Reciprocal Rank Fusion (RRF). RRF calculates a fused rank score for each chunk by summing inverse rank positions: score = 0.5 / (60 + rank). The top fused results are passe...\"\n\n**From `docubrain_kb.txt` (Chunk #0, Relevance: 91%)**:\n> \"DocuBrain Knowledge Base & System Specification  1. Core Architecture & Technologies: DocuBrain is an enterprise Retrieval-Augmented Generation (RAG) platform. It uses ChromaDB with SentenceTransformers (jinaai/jina-embeddings-v2-base-en or all-MiniLM-L6-v2) for high-performance dense vector search....\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='What specific steps occur during evidence validation and query refinement when initial retrieval is insufficient?'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 93.94,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What specific steps occur during evidence validation and query refinement when initial retrieval is insufficient?",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1418",
+          "result_summary": "sufficient=True missing_count=0",
+          "latency_ms": 1201.35,
+          "input_tokens": 479,
+          "output_tokens": 40,
+          "total_tokens": 519,
+          "step_cost": 4.8e-05,
+          "cumulative_cost": 4.8e-05,
+          "raw_args": {
+            "question": "What specific steps occur during evidence validation and query refinement when initial retrieval is insufficient?",
+            "retrieved_context_len": 1418
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "generate_answer",
+          "input_summary": "citations_count=4",
+          "result_summary": "answer_length=1607 fallback=True",
+          "latency_ms": 1208.65,
+          "input_tokens": 382,
+          "output_tokens": 402,
+          "total_tokens": 784,
+          "step_cost": 0.000149,
+          "cumulative_cost": 0.000197,
+          "raw_args": {
+            "question": "What specific steps occur during evidence validation and query refinement when initial retrieval is insufficient?",
+            "sources_count": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": false,
+      "actual_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "refine_document_search",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 2,
+      "correct_tool_decisions": 2,
+      "total_tool_arguments": 3,
+      "valid_tool_arguments": 3,
+      "steps_taken": 2,
+      "expected_steps": 3,
+      "step_efficiency": 0.67,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "Trajectory mismatch"
+    },
+    {
+      "system": "agent",
+      "question_id": "Q10",
+      "question": "Trace the end-to-end multi-hop retrieval and generation process for answering a complex query.",
+      "question_type": "multi_hop",
+      "passed": true,
+      "score": 0.44,
+      "latency_ms": 3239.37,
+      "input_tokens": 852,
+      "output_tokens": 442,
+      "total_tokens": 1294,
+      "cost": 0.000197,
+      "iterations": 3,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt**:\n\n**From `docubrain_kb.txt` (Chunk #6, Relevance: 100%)**:\n> \"8. End-to-End Multi-Hop Retrieval: For multi-hop queries, initial search retrieves primary context, evidence validation identifies gaps, refined search fetches secondary details across sections, and the unified context is passed to the LLM for citation-backed synthesis.\"\n\n**From `docubrain_kb.txt` (Chunk #0, Relevance: 96%)**:\n> \"DocuBrain Knowledge Base & System Specification  1. Core Architecture & Technologies: DocuBrain is an enterprise Retrieval-Augmented Generation (RAG) platform. It uses ChromaDB with SentenceTransformers (jinaai/jina-embeddings-v2-base-en or all-MiniLM-L6-v2) for high-performance dense vector search....\"\n\n**From `docubrain_kb.txt` (Chunk #3, Relevance: 89%)**:\n> \"4. Hybrid Search & Reciprocal Rank Fusion (RRF): DocuBrain combines dense vector search and BM25 sparse keyword retrieval using Reciprocal Rank Fusion (RRF). RRF calculates a fused rank score for each chunk by summing inverse rank positions: score = 0.5 / (60 + rank). The top fused results are passe...\"\n\n**From `docubrain_kb.txt` (Chunk #5, Relevance: 49%)**:\n> \"7. Evidence Validation & Query Refinement Workflow: In the adaptive RAG agent loop, validate_evidence evaluates context sufficiency. If evidence is insufficient, it identifies missing information topics, triggers refine_document_search with a targeted refined query, accumulates new evidence, and re-...\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='Trace the end-to-end multi-hop retrieval and generation process for answering a complex query.'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 64.86,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "Trace the end-to-end multi-hop retrieval and generation process for answering a complex query.",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1418",
+          "result_summary": "sufficient=True missing_count=0",
+          "latency_ms": 1179.45,
+          "input_tokens": 475,
+          "output_tokens": 40,
+          "total_tokens": 515,
+          "step_cost": 4.8e-05,
+          "cumulative_cost": 4.8e-05,
+          "raw_args": {
+            "question": "Trace the end-to-end multi-hop retrieval and generation process for answering a complex query.",
+            "retrieved_context_len": 1418
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "generate_answer",
+          "input_summary": "citations_count=4",
+          "result_summary": "answer_length=1607 fallback=True",
+          "latency_ms": 1097.9,
+          "input_tokens": 377,
+          "output_tokens": 402,
+          "total_tokens": 779,
+          "step_cost": 0.000149,
+          "cumulative_cost": 0.000197,
+          "raw_args": {
+            "question": "Trace the end-to-end multi-hop retrieval and generation process for answering a complex query.",
+            "sources_count": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": false,
+      "actual_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "refine_document_search",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 2,
+      "correct_tool_decisions": 2,
+      "total_tool_arguments": 3,
+      "valid_tool_arguments": 3,
+      "steps_taken": 2,
+      "expected_steps": 3,
+      "step_efficiency": 0.67,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "Trajectory mismatch"
+    }
+  ],
+  "workflow_question_results": [
+    {
+      "system": "workflow",
+      "question_id": "Q1",
+      "question": "What core technologies power DocuBrain's vector search and LLM synthesis?",
+      "question_type": "simple_factual",
+      "passed": true,
+      "score": 0.78,
+      "latency_ms": 2767.73,
+      "input_tokens": 947,
+      "output_tokens": 442,
+      "total_tokens": 1389,
+      "cost": 0.000204,
+      "iterations": 4,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt**:\n\n**From `docubrain_kb.txt` (Chunk #0, Relevance: 100%)**:\n> \"DocuBrain Knowledge Base & System Specification  1. Core Architecture & Technologies: DocuBrain is an enterprise Retrieval-Augmented Generation (RAG) platform. It uses ChromaDB with SentenceTransformers (jinaai/jina-embeddings-v2-base-en or all-MiniLM-L6-v2) for high-performance dense vector search....\"\n\n**From `docubrain_kb.txt` (Chunk #3, Relevance: 98%)**:\n> \"4. Hybrid Search & Reciprocal Rank Fusion (RRF): DocuBrain combines dense vector search and BM25 sparse keyword retrieval using Reciprocal Rank Fusion (RRF). RRF calculates a fused rank score for each chunk by summing inverse rank positions: score = 0.5 / (60 + rank). The top fused results are passe...\"\n\n**From `docubrain_kb.txt` (Chunk #4, Relevance: 96%)**:\n> \"5. Gemini LLM & Local Fallback Mode: When no Gemini API key is provided or network is offline, DocuBrain operates in Smart Local Fallback Mode. Local Fallback Mode extracts structured text snippets and relevance scores directly from top chunks into a summary without calling external LLM APIs.  6. De...\"\n\n**From `docubrain_kb.txt` (Chunk #6, Relevance: 98%)**:\n> \"8. End-to-End Multi-Hop Retrieval: For multi-hop queries, initial search retrieves primary context, evidence validation identifies gaps, refined search fetches secondary details across sections, and the unified context is passed to the LLM for citation-backed synthesis.\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='What core technologies power DocuBrain's vector search and LLM synthesis?'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 47.42,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What core technologies power DocuBrain's vector search and LLM synthesis?",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "refine_document_search",
+          "input_summary": "refined_query='What core technologies power DocuBrain's vector search and LLM synthesis? details context'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 48.81,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What core technologies power DocuBrain's vector search and LLM synthesis? details context",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1630",
+          "result_summary": "sufficient=True",
+          "latency_ms": 1401.33,
+          "input_tokens": 522,
+          "output_tokens": 40,
+          "total_tokens": 562,
+          "step_cost": 5.1e-05,
+          "cumulative_cost": 5.1e-05,
+          "raw_args": {
+            "question": "What core technologies power DocuBrain's vector search and LLM synthesis?",
+            "retrieved_context_len": 1630
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 4,
+          "action": "generate_answer",
+          "input_summary": "citations_count=4",
+          "result_summary": "answer_length=1607 fallback=True",
+          "latency_ms": 1270.16,
+          "input_tokens": 425,
+          "output_tokens": 402,
+          "total_tokens": 827,
+          "step_cost": 0.000152,
+          "cumulative_cost": 0.000204,
+          "raw_args": {
+            "question": "What core technologies power DocuBrain's vector search and LLM synthesis?",
+            "sources_count": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": false,
+      "actual_trajectory": [
+        "search_document",
+        "refine_document_search",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 3,
+      "correct_tool_decisions": 1,
+      "total_tool_arguments": 4,
+      "valid_tool_arguments": 4,
+      "steps_taken": 3,
+      "expected_steps": 2,
+      "step_efficiency": 1.5,
+      "detected_failure_modes": [
+        "Wrong tool choice"
+      ],
+      "trajectory_failure_reason": "Wrong tool choice"
+    },
+    {
+      "system": "workflow",
+      "question_id": "Q2",
+      "question": "What is the default chunk size and overlap configuration in DocuBrain?",
+      "question_type": "simple_factual",
+      "passed": true,
+      "score": 1.0,
+      "latency_ms": 2521.54,
+      "input_tokens": 1126,
+      "output_tokens": 552,
+      "total_tokens": 1678,
+      "cost": 0.00025,
+      "iterations": 4,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt, RAG_Test_Knowledge_Base.pdf**:\n\n**From `docubrain_kb.txt` (Chunk #1, Relevance: 100%)**:\n> \"2. Document Upload & Chunking Configurations: DocuBrain supports 4 document chunking strategies: Standard, Semantic, Agentic, and Late Chunking. The default chunk size is 600 characters with an overlap of 80 characters. When uploading via /api/upload, text is extracted from PDF, DOCX, TXT, or MD fil...\"\n\n**From `docubrain_kb.txt` (Chunk #3, Relevance: 96%)**:\n> \"4. Hybrid Search & Reciprocal Rank Fusion (RRF): DocuBrain combines dense vector search and BM25 sparse keyword retrieval using Reciprocal Rank Fusion (RRF). RRF calculates a fused rank score for each chunk by summing inverse rank positions: score = 0.5 / (60 + rank). The top fused results are passe...\"\n\n**From `RAG_Test_Knowledge_Base.pdf` (Chunk #7, Relevance: 92%)**:\n> \"search, the client must use pagination. The default page size is 20 orders. The maximum supported page size is 50. Search results are sorted by order creation time in descending order by default. 11. Address Changes A customer can change the shipping address while an order is Pending or Confirmed. O...\"\n\n**From `docubrain_kb.txt` (Chunk #0, Relevance: 94%)**:\n> \"DocuBrain Knowledge Base & System Specification  1. Core Architecture & Technologies: DocuBrain is an enterprise Retrieval-Augmented Generation (RAG) platform. It uses ChromaDB with SentenceTransformers (jinaai/jina-embeddings-v2-base-en or all-MiniLM-L6-v2) for high-performance dense vector search....\"\n\n**From `docubrain_kb.txt` (Chunk #2, Relevance: 94%)**:\n> \"3. Chunking Strategy Comparison: Standard Chunking uses recursive character splitting which can fragment context at chunk boundaries. Late Chunking passes the full text through transformer embedding layers first before pool-averaging chunk spans, preserving global document context across chunk bound...\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='What is the default chunk size and overlap configuration in DocuBrain?'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 41.73,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What is the default chunk size and overlap configuration in DocuBrain?",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "refine_document_search",
+          "input_summary": "refined_query='What is the default chunk size and overlap configuration in DocuBrain? details context'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 40.11,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What is the default chunk size and overlap configuration in DocuBrain? details context",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1992",
+          "result_summary": "sufficient=True",
+          "latency_ms": 1300.23,
+          "input_tokens": 612,
+          "output_tokens": 40,
+          "total_tokens": 652,
+          "step_cost": 5.8e-05,
+          "cumulative_cost": 5.8e-05,
+          "raw_args": {
+            "question": "What is the default chunk size and overlap configuration in DocuBrain?",
+            "retrieved_context_len": 1992
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 4,
+          "action": "generate_answer",
+          "input_summary": "citations_count=5",
+          "result_summary": "answer_length=2045 fallback=True",
+          "latency_ms": 1139.47,
+          "input_tokens": 514,
+          "output_tokens": 512,
+          "total_tokens": 1026,
+          "step_cost": 0.000192,
+          "cumulative_cost": 0.00025,
+          "raw_args": {
+            "question": "What is the default chunk size and overlap configuration in DocuBrain?",
+            "sources_count": 5
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": false,
+      "actual_trajectory": [
+        "search_document",
+        "refine_document_search",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 3,
+      "correct_tool_decisions": 1,
+      "total_tool_arguments": 4,
+      "valid_tool_arguments": 4,
+      "steps_taken": 3,
+      "expected_steps": 2,
+      "step_efficiency": 1.5,
+      "detected_failure_modes": [
+        "Wrong tool choice"
+      ],
+      "trajectory_failure_reason": "Wrong tool choice"
+    },
+    {
+      "system": "workflow",
+      "question_id": "Q3",
+      "question": "What sparse lexical retrieval algorithm is used alongside dense vector embeddings?",
+      "question_type": "simple_factual",
+      "passed": true,
+      "score": 0.57,
+      "latency_ms": 2542.28,
+      "input_tokens": 1052,
+      "output_tokens": 544,
+      "total_tokens": 1596,
+      "cost": 0.000242,
+      "iterations": 4,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt, RAG_Test_Knowledge_Base.pdf**:\n\n**From `docubrain_kb.txt` (Chunk #3, Relevance: 100%)**:\n> \"4. Hybrid Search & Reciprocal Rank Fusion (RRF): DocuBrain combines dense vector search and BM25 sparse keyword retrieval using Reciprocal Rank Fusion (RRF). RRF calculates a fused rank score for each chunk by summing inverse rank positions: score = 0.5 / (60 + rank). The top fused results are passe...\"\n\n**From `docubrain_kb.txt` (Chunk #0, Relevance: 100%)**:\n> \"DocuBrain Knowledge Base & System Specification  1. Core Architecture & Technologies: DocuBrain is an enterprise Retrieval-Augmented Generation (RAG) platform. It uses ChromaDB with SentenceTransformers (jinaai/jina-embeddings-v2-base-en or all-MiniLM-L6-v2) for high-performance dense vector search....\"\n\n**From `docubrain_kb.txt` (Chunk #6, Relevance: 96%)**:\n> \"8. End-to-End Multi-Hop Retrieval: For multi-hop queries, initial search retrieves primary context, evidence validation identifies gaps, refined search fetches secondary details across sections, and the unified context is passed to the LLM for citation-backed synthesis.\"\n\n**From `RAG_Test_Knowledge_Base.pdf` (Chunk #4, Relevance: 92%)**:\n> \"Support tickets are assigned one of three priorities. High priority is used for payment failures on an order that cannot be completed, duplicate charges, or orders marked Delivered but not received. Medium priority is used for delayed shipments and refund requests that have exceeded the normal proce...\"\n\n**From `docubrain_kb.txt` (Chunk #2, Relevance: 95%)**:\n> \"3. Chunking Strategy Comparison: Standard Chunking uses recursive character splitting which can fragment context at chunk boundaries. Late Chunking passes the full text through transformer embedding layers first before pool-averaging chunk spans, preserving global document context across chunk bound...\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='What sparse lexical retrieval algorithm is used alongside dense vector embeddings?'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 48.99,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What sparse lexical retrieval algorithm is used alongside dense vector embeddings?",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "refine_document_search",
+          "input_summary": "refined_query='What sparse lexical retrieval algorithm is used alongside dense vector embeddings? details context'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 42.27,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What sparse lexical retrieval algorithm is used alongside dense vector embeddings? details context",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1833",
+          "result_summary": "sufficient=True",
+          "latency_ms": 1197.01,
+          "input_tokens": 575,
+          "output_tokens": 40,
+          "total_tokens": 615,
+          "step_cost": 5.5e-05,
+          "cumulative_cost": 5.5e-05,
+          "raw_args": {
+            "question": "What sparse lexical retrieval algorithm is used alongside dense vector embeddings?",
+            "retrieved_context_len": 1833
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 4,
+          "action": "generate_answer",
+          "input_summary": "citations_count=5",
+          "result_summary": "answer_length=2013 fallback=True",
+          "latency_ms": 1254.01,
+          "input_tokens": 477,
+          "output_tokens": 504,
+          "total_tokens": 981,
+          "step_cost": 0.000187,
+          "cumulative_cost": 0.000242,
+          "raw_args": {
+            "question": "What sparse lexical retrieval algorithm is used alongside dense vector embeddings?",
+            "sources_count": 5
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": false,
+      "actual_trajectory": [
+        "search_document",
+        "refine_document_search",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 3,
+      "correct_tool_decisions": 1,
+      "total_tool_arguments": 4,
+      "valid_tool_arguments": 4,
+      "steps_taken": 3,
+      "expected_steps": 2,
+      "step_efficiency": 1.5,
+      "detected_failure_modes": [
+        "Wrong tool choice"
+      ],
+      "trajectory_failure_reason": "Wrong tool choice"
+    },
+    {
+      "system": "workflow",
+      "question_id": "Q4",
+      "question": "Summarize the document upload and chunking workflow across both backend and frontend.",
+      "question_type": "multi_section",
+      "passed": false,
+      "score": 0.32,
+      "latency_ms": 2485.95,
+      "input_tokens": 1448,
+      "output_tokens": 547,
+      "total_tokens": 1995,
+      "cost": 0.000273,
+      "iterations": 4,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt, Krishnan_React_3+_Profile.docx.pdf**:\n\n**From `docubrain_kb.txt` (Chunk #1, Relevance: 100%)**:\n> \"2. Document Upload & Chunking Configurations: DocuBrain supports 4 document chunking strategies: Standard, Semantic, Agentic, and Late Chunking. The default chunk size is 600 characters with an overlap of 80 characters. When uploading via /api/upload, text is extracted from PDF, DOCX, TXT, or MD fil...\"\n\n**From `docubrain_kb.txt` (Chunk #2, Relevance: 100%)**:\n> \"3. Chunking Strategy Comparison: Standard Chunking uses recursive character splitting which can fragment context at chunk boundaries. Late Chunking passes the full text through transformer embedding layers first before pool-averaging chunk spans, preserving global document context across chunk bound...\"\n\n**From `docubrain_kb.txt` (Chunk #5, Relevance: 96%)**:\n> \"7. Evidence Validation & Query Refinement Workflow: In the adaptive RAG agent loop, validate_evidence evaluates context sufficiency. If evidence is insufficient, it identifies missing information topics, triggers refine_document_search with a targeted refined query, accumulates new evidence, and re-...\"\n\n**From `Krishnan_React_3+_Profile.docx.pdf` (Chunk #2, Relevance: 93%)**:\n> \"[Page 3]       RECENT  PROFESSIONAL  EXPERIENCE:   Project  Name:  Trames   Technologies:  ReactJS,,  TypeScript,  Redux  JS,  HTML5,  CSS3,  AWS,  ,  Postman.   Project  Management  Tool:  Monday.com   Description:   \u25cf  TRAMES  is  a  shipping/Cargo  management-based  web  application.  \u25cf  Track  &...\"\n\n**From `docubrain_kb.txt` (Chunk #6, Relevance: 92%)**:\n> \"8. End-to-End Multi-Hop Retrieval: For multi-hop queries, initial search retrieves primary context, evidence validation identifies gaps, refined search fetches secondary details across sections, and the unified context is passed to the LLM for citation-backed synthesis.\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='Summarize the document upload and chunking workflow across both backend and frontend.'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 53.6,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "Summarize the document upload and chunking workflow across both backend and frontend.",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "refine_document_search",
+          "input_summary": "refined_query='Summarize the document upload and chunking workflow across both backend and frontend. details context'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 40.8,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "Summarize the document upload and chunking workflow across both backend and frontend. details context",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "validate_evidence",
+          "input_summary": "context_length=2620",
+          "result_summary": "sufficient=True",
+          "latency_ms": 1189.81,
+          "input_tokens": 773,
+          "output_tokens": 40,
+          "total_tokens": 813,
+          "step_cost": 7e-05,
+          "cumulative_cost": 7e-05,
+          "raw_args": {
+            "question": "Summarize the document upload and chunking workflow across both backend and frontend.",
+            "retrieved_context_len": 2620
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 4,
+          "action": "generate_answer",
+          "input_summary": "citations_count=5",
+          "result_summary": "answer_length=2027 fallback=True",
+          "latency_ms": 1201.74,
+          "input_tokens": 675,
+          "output_tokens": 507,
+          "total_tokens": 1182,
+          "step_cost": 0.000203,
+          "cumulative_cost": 0.000273,
+          "raw_args": {
+            "question": "Summarize the document upload and chunking workflow across both backend and frontend.",
+            "sources_count": 5
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "refine_document_search",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 3,
+      "correct_tool_decisions": 3,
+      "total_tool_arguments": 4,
+      "valid_tool_arguments": 4,
+      "steps_taken": 3,
+      "expected_steps": 2,
+      "step_efficiency": 1.5,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    },
+    {
+      "system": "workflow",
+      "question_id": "Q5",
+      "question": "Compare Standard Chunking versus Late Chunking in terms of context preservation across chunk boundaries.",
+      "question_type": "comparison",
+      "passed": true,
+      "score": 0.88,
+      "latency_ms": 2465.29,
+      "input_tokens": 806,
+      "output_tokens": 442,
+      "total_tokens": 1248,
+      "cost": 0.000193,
+      "iterations": 4,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt**:\n\n**From `docubrain_kb.txt` (Chunk #2, Relevance: 100%)**:\n> \"3. Chunking Strategy Comparison: Standard Chunking uses recursive character splitting which can fragment context at chunk boundaries. Late Chunking passes the full text through transformer embedding layers first before pool-averaging chunk spans, preserving global document context across chunk bound...\"\n\n**From `docubrain_kb.txt` (Chunk #6, Relevance: 97%)**:\n> \"8. End-to-End Multi-Hop Retrieval: For multi-hop queries, initial search retrieves primary context, evidence validation identifies gaps, refined search fetches secondary details across sections, and the unified context is passed to the LLM for citation-backed synthesis.\"\n\n**From `docubrain_kb.txt` (Chunk #1, Relevance: 94%)**:\n> \"2. Document Upload & Chunking Configurations: DocuBrain supports 4 document chunking strategies: Standard, Semantic, Agentic, and Late Chunking. The default chunk size is 600 characters with an overlap of 80 characters. When uploading via /api/upload, text is extracted from PDF, DOCX, TXT, or MD fil...\"\n\n**From `docubrain_kb.txt` (Chunk #5, Relevance: 96%)**:\n> \"7. Evidence Validation & Query Refinement Workflow: In the adaptive RAG agent loop, validate_evidence evaluates context sufficiency. If evidence is insufficient, it identifies missing information topics, triggers refine_document_search with a targeted refined query, accumulates new evidence, and re-...\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='Compare Standard Chunking versus Late Chunking in terms of context preservation across chunk boundaries.'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 53.97,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "Compare Standard Chunking versus Late Chunking in terms of context preservation across chunk boundaries.",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "refine_document_search",
+          "input_summary": "refined_query='Compare Standard Chunking versus Late Chunking in terms of context preservation across chunk boundaries. details context'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 58.17,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "Compare Standard Chunking versus Late Chunking in terms of context preservation across chunk boundaries. details context",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1316",
+          "result_summary": "sufficient=True",
+          "latency_ms": 1184.73,
+          "input_tokens": 452,
+          "output_tokens": 40,
+          "total_tokens": 492,
+          "step_cost": 4.6e-05,
+          "cumulative_cost": 4.6e-05,
+          "raw_args": {
+            "question": "Compare Standard Chunking versus Late Chunking in terms of context preservation across chunk boundaries.",
+            "retrieved_context_len": 1316
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 4,
+          "action": "generate_answer",
+          "input_summary": "citations_count=4",
+          "result_summary": "answer_length=1607 fallback=True",
+          "latency_ms": 1167.41,
+          "input_tokens": 354,
+          "output_tokens": 402,
+          "total_tokens": 756,
+          "step_cost": 0.000147,
+          "cumulative_cost": 0.000193,
+          "raw_args": {
+            "question": "Compare Standard Chunking versus Late Chunking in terms of context preservation across chunk boundaries.",
+            "sources_count": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "refine_document_search",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 3,
+      "correct_tool_decisions": 3,
+      "total_tool_arguments": 4,
+      "valid_tool_arguments": 4,
+      "steps_taken": 3,
+      "expected_steps": 2,
+      "step_efficiency": 1.5,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    },
+    {
+      "system": "workflow",
+      "question_id": "Q6",
+      "question": "How does Reciprocal Rank Fusion (RRF) combine scores from vector search and BM25 search?",
+      "question_type": "multi_section",
+      "passed": true,
+      "score": 0.81,
+      "latency_ms": 2742.77,
+      "input_tokens": 1146,
+      "output_tokens": 534,
+      "total_tokens": 1680,
+      "cost": 0.000246,
+      "iterations": 4,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt**:\n\n**From `docubrain_kb.txt` (Chunk #3, Relevance: 100%)**:\n> \"4. Hybrid Search & Reciprocal Rank Fusion (RRF): DocuBrain combines dense vector search and BM25 sparse keyword retrieval using Reciprocal Rank Fusion (RRF). RRF calculates a fused rank score for each chunk by summing inverse rank positions: score = 0.5 / (60 + rank). The top fused results are passe...\"\n\n**From `docubrain_kb.txt` (Chunk #0, Relevance: 97%)**:\n> \"DocuBrain Knowledge Base & System Specification  1. Core Architecture & Technologies: DocuBrain is an enterprise Retrieval-Augmented Generation (RAG) platform. It uses ChromaDB with SentenceTransformers (jinaai/jina-embeddings-v2-base-en or all-MiniLM-L6-v2) for high-performance dense vector search....\"\n\n**From `docubrain_kb.txt` (Chunk #6, Relevance: 96%)**:\n> \"8. End-to-End Multi-Hop Retrieval: For multi-hop queries, initial search retrieves primary context, evidence validation identifies gaps, refined search fetches secondary details across sections, and the unified context is passed to the LLM for citation-backed synthesis.\"\n\n**From `docubrain_kb.txt` (Chunk #1, Relevance: 92%)**:\n> \"2. Document Upload & Chunking Configurations: DocuBrain supports 4 document chunking strategies: Standard, Semantic, Agentic, and Late Chunking. The default chunk size is 600 characters with an overlap of 80 characters. When uploading via /api/upload, text is extracted from PDF, DOCX, TXT, or MD fil...\"\n\n**From `docubrain_kb.txt` (Chunk #4, Relevance: 92%)**:\n> \"5. Gemini LLM & Local Fallback Mode: When no Gemini API key is provided or network is offline, DocuBrain operates in Smart Local Fallback Mode. Local Fallback Mode extracts structured text snippets and relevance scores directly from top chunks into a summary without calling external LLM APIs.  6. De...\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='How does Reciprocal Rank Fusion (RRF) combine scores from vector search and BM25 search?'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 51.81,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "How does Reciprocal Rank Fusion (RRF) combine scores from vector search and BM25 search?",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "refine_document_search",
+          "input_summary": "refined_query='How does Reciprocal Rank Fusion (RRF) combine scores from vector search and BM25 search? details context'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 48.4,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "How does Reciprocal Rank Fusion (RRF) combine scores from vector search and BM25 search? details context",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "validate_evidence",
+          "input_summary": "context_length=2013",
+          "result_summary": "sufficient=True",
+          "latency_ms": 1485.92,
+          "input_tokens": 622,
+          "output_tokens": 40,
+          "total_tokens": 662,
+          "step_cost": 5.9e-05,
+          "cumulative_cost": 5.9e-05,
+          "raw_args": {
+            "question": "How does Reciprocal Rank Fusion (RRF) combine scores from vector search and BM25 search?",
+            "retrieved_context_len": 2013
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 4,
+          "action": "generate_answer",
+          "input_summary": "citations_count=5",
+          "result_summary": "answer_length=1972 fallback=True",
+          "latency_ms": 1156.65,
+          "input_tokens": 524,
+          "output_tokens": 494,
+          "total_tokens": 1018,
+          "step_cost": 0.000188,
+          "cumulative_cost": 0.000246,
+          "raw_args": {
+            "question": "How does Reciprocal Rank Fusion (RRF) combine scores from vector search and BM25 search?",
+            "sources_count": 5
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "refine_document_search",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 3,
+      "correct_tool_decisions": 3,
+      "total_tool_arguments": 4,
+      "valid_tool_arguments": 4,
+      "steps_taken": 3,
+      "expected_steps": 2,
+      "step_efficiency": 1.5,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    },
+    {
+      "system": "workflow",
+      "question_id": "Q7",
+      "question": "How does Gemini API online execution compare with Local Fallback Mode when no API key is provided?",
+      "question_type": "comparison",
+      "passed": true,
+      "score": 0.59,
+      "latency_ms": 2623.86,
+      "input_tokens": 1485,
+      "output_tokens": 657,
+      "total_tokens": 2142,
+      "cost": 0.000308,
+      "iterations": 4,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt, RAG_Test_Knowledge_Base.pdf, Acme_Subscription_Platform_Dataset2.txt**:\n\n**From `docubrain_kb.txt` (Chunk #4, Relevance: 100%)**:\n> \"5. Gemini LLM & Local Fallback Mode: When no Gemini API key is provided or network is offline, DocuBrain operates in Smart Local Fallback Mode. Local Fallback Mode extracts structured text snippets and relevance scores directly from top chunks into a summary without calling external LLM APIs.  6. De...\"\n\n**From `RAG_Test_Knowledge_Base.pdf` (Chunk #7, Relevance: 85%)**:\n> \"search, the client must use pagination. The default page size is 20 orders. The maximum supported page size is 50. Search results are sorted by order creation time in descending order by default. 11. Address Changes A customer can change the shipping address while an order is Pending or Confirmed. O...\"\n\n**From `Acme_Subscription_Platform_Dataset2.txt` (Chunk #5, Relevance: 49%)**:\n> \"API Authentication API requests use bearer tokens in the Authorization header as 'Bearer '. Tokens must not be placed in URL query parameters. A workspace can have up to five active API tokens.  11. Webhooks Failed webhook deliveries are retried up to three times, approximately after 1 minute, 5 min...\"\n\n**From `docubrain_kb.txt` (Chunk #0, Relevance: 49%)**:\n> \"DocuBrain Knowledge Base & System Specification  1. Core Architecture & Technologies: DocuBrain is an enterprise Retrieval-Augmented Generation (RAG) platform. It uses ChromaDB with SentenceTransformers (jinaai/jina-embeddings-v2-base-en or all-MiniLM-L6-v2) for high-performance dense vector search....\"\n\n**From `docubrain_kb.txt` (Chunk #6, Relevance: 49%)**:\n> \"8. End-to-End Multi-Hop Retrieval: For multi-hop queries, initial search retrieves primary context, evidence validation identifies gaps, refined search fetches secondary details across sections, and the unified context is passed to the LLM for citation-backed synthesis.\"\n\n**From `Acme_Subscription_Platform_Dataset2.txt` (Chunk #5, Relevance: 48%)**:\n> \"API Authentication API requests use bearer tokens in the Authorization header as 'Bearer '. Tokens must not be placed in URL query parameters. A workspace can have up to five active API tokens.  11. Webhooks Failed webhook deliveries are retried up to three times, approximately after 1 minute, 5 min...\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='How does Gemini API online execution compare with Local Fallback Mode when no API key is provided?'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 51.96,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "How does Gemini API online execution compare with Local Fallback Mode when no API key is provided?",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "refine_document_search",
+          "input_summary": "refined_query='How does Gemini API online execution compare with Local Fallback Mode when no API key is provided? details context'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 47.95,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "How does Gemini API online execution compare with Local Fallback Mode when no API key is provided? details context",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "validate_evidence",
+          "input_summary": "context_length=2682",
+          "result_summary": "sufficient=True",
+          "latency_ms": 1271.73,
+          "input_tokens": 792,
+          "output_tokens": 40,
+          "total_tokens": 832,
+          "step_cost": 7.1e-05,
+          "cumulative_cost": 7.1e-05,
+          "raw_args": {
+            "question": "How does Gemini API online execution compare with Local Fallback Mode when no API key is provided?",
+            "retrieved_context_len": 2682
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 4,
+          "action": "generate_answer",
+          "input_summary": "citations_count=6",
+          "result_summary": "answer_length=2464 fallback=True",
+          "latency_ms": 1252.23,
+          "input_tokens": 693,
+          "output_tokens": 617,
+          "total_tokens": 1310,
+          "step_cost": 0.000237,
+          "cumulative_cost": 0.000308,
+          "raw_args": {
+            "question": "How does Gemini API online execution compare with Local Fallback Mode when no API key is provided?",
+            "sources_count": 6
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "refine_document_search",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 3,
+      "correct_tool_decisions": 3,
+      "total_tool_arguments": 4,
+      "valid_tool_arguments": 4,
+      "steps_taken": 3,
+      "expected_steps": 2,
+      "step_efficiency": 1.5,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    },
+    {
+      "system": "workflow",
+      "question_id": "Q8",
+      "question": "What happens when system credentials or authentication fail during deployment?",
+      "question_type": "ambiguous",
+      "passed": true,
+      "score": 0.38,
+      "latency_ms": 3135.43,
+      "input_tokens": 1220,
+      "output_tokens": 579,
+      "total_tokens": 1799,
+      "cost": 0.000265,
+      "iterations": 4,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt, RAG_Test_Knowledge_Base.pdf, Acme_Subscription_Platform_Dataset2.txt**:\n\n**From `docubrain_kb.txt` (Chunk #4, Relevance: 100%)**:\n> \"5. Gemini LLM & Local Fallback Mode: When no Gemini API key is provided or network is offline, DocuBrain operates in Smart Local Fallback Mode. Local Fallback Mode extracts structured text snippets and relevance scores directly from top chunks into a summary without calling external LLM APIs.  6. De...\"\n\n**From `Acme_Subscription_Platform_Dataset2.txt` (Chunk #5, Relevance: 95%)**:\n> \"API Authentication API requests use bearer tokens in the Authorization header as 'Bearer '. Tokens must not be placed in URL query parameters. A workspace can have up to five active API tokens.  11. Webhooks Failed webhook deliveries are retried up to three times, approximately after 1 minute, 5 min...\"\n\n**From `Acme_Subscription_Platform_Dataset2.txt` (Chunk #5, Relevance: 93%)**:\n> \"API Authentication API requests use bearer tokens in the Authorization header as 'Bearer '. Tokens must not be placed in URL query parameters. A workspace can have up to five active API tokens.  11. Webhooks Failed webhook deliveries are retried up to three times, approximately after 1 minute, 5 min...\"\n\n**From `Acme_Subscription_Platform_Dataset2.txt` (Chunk #5, Relevance: 94%)**:\n> \"API Authentication API requests use bearer tokens in the Authorization header as 'Bearer '. Tokens must not be placed in URL query parameters. A workspace can have up to five active API tokens.  11. Webhooks Failed webhook deliveries are retried up to three times, approximately after 1 minute, 5 min...\"\n\n**From `RAG_Test_Knowledge_Base.pdf` (Chunk #8, Relevance: 50%)**:\n> \"Customer support agents must never request or store a customer's full payment card number or card security code. For payment troubleshooting, agents should use the payment transaction ID and the last four digits of the card when available. API logs must mask authentication tokens and other credentia...\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='What happens when system credentials or authentication fail during deployment?'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 346.92,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What happens when system credentials or authentication fail during deployment?",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "refine_document_search",
+          "input_summary": "refined_query='What happens when system credentials or authentication fail during deployment? details context'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 152.4,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What happens when system credentials or authentication fail during deployment? details context",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "validate_evidence",
+          "input_summary": "context_length=2172",
+          "result_summary": "sufficient=True",
+          "latency_ms": 1310.47,
+          "input_tokens": 659,
+          "output_tokens": 40,
+          "total_tokens": 699,
+          "step_cost": 6.1e-05,
+          "cumulative_cost": 6.1e-05,
+          "raw_args": {
+            "question": "What happens when system credentials or authentication fail during deployment?",
+            "retrieved_context_len": 2172
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 4,
+          "action": "generate_answer",
+          "input_summary": "citations_count=5",
+          "result_summary": "answer_length=2155 fallback=True",
+          "latency_ms": 1325.63,
+          "input_tokens": 561,
+          "output_tokens": 539,
+          "total_tokens": 1100,
+          "step_cost": 0.000204,
+          "cumulative_cost": 0.000265,
+          "raw_args": {
+            "question": "What happens when system credentials or authentication fail during deployment?",
+            "sources_count": 5
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "refine_document_search",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 3,
+      "correct_tool_decisions": 3,
+      "total_tool_arguments": 4,
+      "valid_tool_arguments": 4,
+      "steps_taken": 3,
+      "expected_steps": 2,
+      "step_efficiency": 1.5,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    },
+    {
+      "system": "workflow",
+      "question_id": "Q9",
+      "question": "What specific steps occur during evidence validation and query refinement when initial retrieval is insufficient?",
+      "question_type": "query_refinement",
+      "passed": true,
+      "score": 0.8,
+      "latency_ms": 2949.19,
+      "input_tokens": 1014,
+      "output_tokens": 534,
+      "total_tokens": 1548,
+      "cost": 0.000236,
+      "iterations": 4,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt**:\n\n**From `docubrain_kb.txt` (Chunk #5, Relevance: 100%)**:\n> \"7. Evidence Validation & Query Refinement Workflow: In the adaptive RAG agent loop, validate_evidence evaluates context sufficiency. If evidence is insufficient, it identifies missing information topics, triggers refine_document_search with a targeted refined query, accumulates new evidence, and re-...\"\n\n**From `docubrain_kb.txt` (Chunk #6, Relevance: 98%)**:\n> \"8. End-to-End Multi-Hop Retrieval: For multi-hop queries, initial search retrieves primary context, evidence validation identifies gaps, refined search fetches secondary details across sections, and the unified context is passed to the LLM for citation-backed synthesis.\"\n\n**From `docubrain_kb.txt` (Chunk #3, Relevance: 93%)**:\n> \"4. Hybrid Search & Reciprocal Rank Fusion (RRF): DocuBrain combines dense vector search and BM25 sparse keyword retrieval using Reciprocal Rank Fusion (RRF). RRF calculates a fused rank score for each chunk by summing inverse rank positions: score = 0.5 / (60 + rank). The top fused results are passe...\"\n\n**From `docubrain_kb.txt` (Chunk #0, Relevance: 91%)**:\n> \"DocuBrain Knowledge Base & System Specification  1. Core Architecture & Technologies: DocuBrain is an enterprise Retrieval-Augmented Generation (RAG) platform. It uses ChromaDB with SentenceTransformers (jinaai/jina-embeddings-v2-base-en or all-MiniLM-L6-v2) for high-performance dense vector search....\"\n\n**From `docubrain_kb.txt` (Chunk #2, Relevance: 91%)**:\n> \"3. Chunking Strategy Comparison: Standard Chunking uses recursive character splitting which can fragment context at chunk boundaries. Late Chunking passes the full text through transformer embedding layers first before pool-averaging chunk spans, preserving global document context across chunk bound...\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='What specific steps occur during evidence validation and query refinement when initial retrieval is insufficient?'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 64.77,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What specific steps occur during evidence validation and query refinement when initial retrieval is insufficient?",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "refine_document_search",
+          "input_summary": "refined_query='What specific steps occur during evidence validation and query refinement when initial retrieval is insufficient? details context'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 89.8,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "What specific steps occur during evidence validation and query refinement when initial retrieval is insufficient? details context",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1726",
+          "result_summary": "sufficient=True",
+          "latency_ms": 1366.62,
+          "input_tokens": 556,
+          "output_tokens": 40,
+          "total_tokens": 596,
+          "step_cost": 5.4e-05,
+          "cumulative_cost": 5.4e-05,
+          "raw_args": {
+            "question": "What specific steps occur during evidence validation and query refinement when initial retrieval is insufficient?",
+            "retrieved_context_len": 1726
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 4,
+          "action": "generate_answer",
+          "input_summary": "citations_count=5",
+          "result_summary": "answer_length=1972 fallback=True",
+          "latency_ms": 1428.0,
+          "input_tokens": 458,
+          "output_tokens": 494,
+          "total_tokens": 952,
+          "step_cost": 0.000183,
+          "cumulative_cost": 0.000236,
+          "raw_args": {
+            "question": "What specific steps occur during evidence validation and query refinement when initial retrieval is insufficient?",
+            "sources_count": 5
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "refine_document_search",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "refine_document_search",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 3,
+      "correct_tool_decisions": 3,
+      "total_tool_arguments": 4,
+      "valid_tool_arguments": 4,
+      "steps_taken": 3,
+      "expected_steps": 3,
+      "step_efficiency": 1.0,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    },
+    {
+      "system": "workflow",
+      "question_id": "Q10",
+      "question": "Trace the end-to-end multi-hop retrieval and generation process for answering a complex query.",
+      "question_type": "multi_hop",
+      "passed": true,
+      "score": 0.44,
+      "latency_ms": 2969.25,
+      "input_tokens": 972,
+      "output_tokens": 528,
+      "total_tokens": 1500,
+      "cost": 0.000231,
+      "iterations": 4,
+      "termination_reason": "completed",
+      "final_answer": "*(Note: Generated via Local Context Extractor - Provide a Gemini API key in settings for full LLM generative capabilities)*\n\nBased on content retrieved from **docubrain_kb.txt, RAG_Test_Knowledge_Base.pdf**:\n\n**From `docubrain_kb.txt` (Chunk #6, Relevance: 100%)**:\n> \"8. End-to-End Multi-Hop Retrieval: For multi-hop queries, initial search retrieves primary context, evidence validation identifies gaps, refined search fetches secondary details across sections, and the unified context is passed to the LLM for citation-backed synthesis.\"\n\n**From `docubrain_kb.txt` (Chunk #0, Relevance: 95%)**:\n> \"DocuBrain Knowledge Base & System Specification  1. Core Architecture & Technologies: DocuBrain is an enterprise Retrieval-Augmented Generation (RAG) platform. It uses ChromaDB with SentenceTransformers (jinaai/jina-embeddings-v2-base-en or all-MiniLM-L6-v2) for high-performance dense vector search....\"\n\n**From `docubrain_kb.txt` (Chunk #3, Relevance: 89%)**:\n> \"4. Hybrid Search & Reciprocal Rank Fusion (RRF): DocuBrain combines dense vector search and BM25 sparse keyword retrieval using Reciprocal Rank Fusion (RRF). RRF calculates a fused rank score for each chunk by summing inverse rank positions: score = 0.5 / (60 + rank). The top fused results are passe...\"\n\n**From `docubrain_kb.txt` (Chunk #5, Relevance: 97%)**:\n> \"7. Evidence Validation & Query Refinement Workflow: In the adaptive RAG agent loop, validate_evidence evaluates context sufficiency. If evidence is insufficient, it identifies missing information topics, triggers refine_document_search with a targeted refined query, accumulates new evidence, and re-...\"\n\n**From `RAG_Test_Knowledge_Base.pdf` (Chunk #0, Relevance: 48%)**:\n> \"[Page 1] E-Commerce Order Management  RAG Test Knowledge Base This document is intentionally self-contained and can be uploaded directly into a RAG application. The evaluation questions are designed to be answered using this document only.\"\n",
+      "trace": [
+        {
+          "step_number": 1,
+          "action": "search_document",
+          "input_summary": "query='Trace the end-to-end multi-hop retrieval and generation process for answering a complex query.'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 49.94,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "Trace the end-to-end multi-hop retrieval and generation process for answering a complex query.",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 2,
+          "action": "refine_document_search",
+          "input_summary": "refined_query='Trace the end-to-end multi-hop retrieval and generation process for answering a complex query. details context'",
+          "result_summary": "results=4 top_score=1.0",
+          "latency_ms": 85.08,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0,
+          "step_cost": 0.0,
+          "cumulative_cost": 0.0,
+          "raw_args": {
+            "document_id": "test_kb",
+            "query": "Trace the end-to-end multi-hop retrieval and generation process for answering a complex query. details context",
+            "top_k": 4
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 3,
+          "action": "validate_evidence",
+          "input_summary": "context_length=1659",
+          "result_summary": "sufficient=True",
+          "latency_ms": 1459.5,
+          "input_tokens": 535,
+          "output_tokens": 40,
+          "total_tokens": 575,
+          "step_cost": 5.2e-05,
+          "cumulative_cost": 5.2e-05,
+          "raw_args": {
+            "question": "Trace the end-to-end multi-hop retrieval and generation process for answering a complex query.",
+            "retrieved_context_len": 1659
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        },
+        {
+          "step_number": 4,
+          "action": "generate_answer",
+          "input_summary": "citations_count=5",
+          "result_summary": "answer_length=1948 fallback=True",
+          "latency_ms": 1374.74,
+          "input_tokens": 437,
+          "output_tokens": 488,
+          "total_tokens": 925,
+          "step_cost": 0.000179,
+          "cumulative_cost": 0.000231,
+          "raw_args": {
+            "question": "Trace the end-to-end multi-hop retrieval and generation process for answering a complex query.",
+            "sources_count": 5
+          },
+          "is_tool_choice_valid": true,
+          "is_argument_valid": true,
+          "argument_error_reason": "",
+          "details": {}
+        }
+      ],
+      "trajectory_passed": true,
+      "actual_trajectory": [
+        "search_document",
+        "refine_document_search",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "expected_trajectory": [
+        "search_document",
+        "validate_evidence",
+        "refine_document_search",
+        "validate_evidence",
+        "generate_answer"
+      ],
+      "total_tool_decisions": 3,
+      "correct_tool_decisions": 3,
+      "total_tool_arguments": 4,
+      "valid_tool_arguments": 4,
+      "steps_taken": 3,
+      "expected_steps": 3,
+      "step_efficiency": 1.0,
+      "detected_failure_modes": [],
+      "trajectory_failure_reason": "None"
+    }
+  ]
+}

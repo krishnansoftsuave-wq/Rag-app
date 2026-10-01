@@ -1,0 +1,129 @@
+[
+  {
+    "id": "Q1",
+    "question": "What core technologies power DocuBrain's vector search and LLM synthesis?",
+    "question_type": "simple_factual",
+    "expected_answer": "DocuBrain uses ChromaDB with SentenceTransformers for vector search and Google Gemini 2.5 Flash for LLM synthesis.",
+    "document_id": "test_kb",
+    "expected_trajectory": ["search_document", "validate_evidence", "generate_answer"],
+    "alternate_valid_trajectories": [
+      ["search_document", "validate_evidence", "generate_answer"]
+    ],
+    "expected_steps": 2
+  },
+  {
+    "id": "Q2",
+    "question": "What is the default chunk size and overlap configuration in DocuBrain?",
+    "question_type": "simple_factual",
+    "expected_answer": "The default chunk size is 600 characters with an overlap of 80 characters.",
+    "document_id": "test_kb",
+    "expected_trajectory": ["search_document", "validate_evidence", "generate_answer"],
+    "alternate_valid_trajectories": [
+      ["search_document", "validate_evidence", "generate_answer"]
+    ],
+    "expected_steps": 2
+  },
+  {
+    "id": "Q3",
+    "question": "What sparse lexical retrieval algorithm is used alongside dense vector embeddings?",
+    "question_type": "simple_factual",
+    "expected_answer": "DocuBrain uses Rank-BM25 (BM25Okapi) for sparse lexical keyword retrieval.",
+    "document_id": "test_kb",
+    "expected_trajectory": ["search_document", "validate_evidence", "generate_answer"],
+    "alternate_valid_trajectories": [
+      ["search_document", "validate_evidence", "generate_answer"]
+    ],
+    "expected_steps": 2
+  },
+  {
+    "id": "Q4",
+    "question": "Summarize the document upload and chunking workflow across both backend and frontend.",
+    "question_type": "multi_section",
+    "expected_answer": "The frontend document upload interface allows strategy selection (standard, semantic, agentic, late), sending files to /api/upload. The backend extracts text, chunks it, generates embeddings, stores them in ChromaDB, and rebuilds the BM25 index.",
+    "document_id": "test_kb",
+    "expected_trajectory": ["search_document", "validate_evidence", "generate_answer"],
+    "alternate_valid_trajectories": [
+      ["search_document", "refine_document_search", "validate_evidence", "generate_answer"],
+      ["search_document", "validate_evidence", "generate_answer"]
+    ],
+    "expected_steps": 2
+  },
+  {
+    "id": "Q5",
+    "question": "Compare Standard Chunking versus Late Chunking in terms of context preservation across chunk boundaries.",
+    "question_type": "comparison",
+    "expected_answer": "Standard Chunking uses recursive character splitting which can fragment sentence context at boundaries, whereas Late Chunking passes the full text through transformer model layers first before pool-averaging chunk spans, preserving global document context.",
+    "document_id": "test_kb",
+    "expected_trajectory": ["search_document", "validate_evidence", "generate_answer"],
+    "alternate_valid_trajectories": [
+      ["search_document", "refine_document_search", "validate_evidence", "generate_answer"],
+      ["search_document", "validate_evidence", "generate_answer"]
+    ],
+    "expected_steps": 2
+  },
+  {
+    "id": "Q6",
+    "question": "How does Reciprocal Rank Fusion (RRF) combine scores from vector search and BM25 search?",
+    "question_type": "multi_section",
+    "expected_answer": "RRF calculates a fused rank score for each chunk by summing inverse rank positions (0.5 / (60 + rank)) from both vector search and BM25 search, normalizing the final top results.",
+    "document_id": "test_kb",
+    "expected_trajectory": ["search_document", "validate_evidence", "generate_answer"],
+    "alternate_valid_trajectories": [
+      ["search_document", "refine_document_search", "validate_evidence", "generate_answer"],
+      ["search_document", "validate_evidence", "generate_answer"]
+    ],
+    "expected_steps": 2
+  },
+  {
+    "id": "Q7",
+    "question": "How does Gemini API online execution compare with Local Fallback Mode when no API key is provided?",
+    "question_type": "comparison",
+    "expected_answer": "Gemini API generates dynamic, natural language answers with source citations, whereas Local Fallback Mode directly extracts top context snippets into a structured summary without external LLM API calls.",
+    "document_id": "test_kb",
+    "expected_trajectory": ["search_document", "validate_evidence", "generate_answer"],
+    "alternate_valid_trajectories": [
+      ["search_document", "refine_document_search", "validate_evidence", "generate_answer"],
+      ["search_document", "validate_evidence", "generate_answer"]
+    ],
+    "expected_steps": 2
+  },
+  {
+    "id": "Q8",
+    "question": "What happens when system credentials or authentication fail during deployment?",
+    "question_type": "ambiguous",
+    "expected_answer": "The system logs warning events, falls back to local context synthesis mode without crashing, and reports status on the health endpoint.",
+    "document_id": "test_kb",
+    "expected_trajectory": ["search_document", "validate_evidence", "generate_answer"],
+    "alternate_valid_trajectories": [
+      ["search_document", "refine_document_search", "validate_evidence", "generate_answer"],
+      ["search_document", "validate_evidence", "generate_answer"]
+    ],
+    "expected_steps": 2
+  },
+  {
+    "id": "Q9",
+    "question": "What specific steps occur during evidence validation and query refinement when initial retrieval is insufficient?",
+    "question_type": "query_refinement",
+    "expected_answer": "The validator evaluates context sufficiency. If insufficient, it identifies missing information topics, triggers refine_document_search with a targeted query, updates context, and re-validates.",
+    "document_id": "test_kb",
+    "expected_trajectory": ["search_document", "validate_evidence", "refine_document_search", "validate_evidence", "generate_answer"],
+    "alternate_valid_trajectories": [
+      ["search_document", "validate_evidence", "refine_document_search", "validate_evidence", "generate_answer"],
+      ["search_document", "refine_document_search", "validate_evidence", "generate_answer"]
+    ],
+    "expected_steps": 3
+  },
+  {
+    "id": "Q10",
+    "question": "Trace the end-to-end multi-hop retrieval and generation process for answering a complex query.",
+    "question_type": "multi_hop",
+    "expected_answer": "The process executes initial search, checks evidence completeness, formulates follow-up queries for missing details, fuses multi-step chunks, and passes the unified context to the LLM.",
+    "document_id": "test_kb",
+    "expected_trajectory": ["search_document", "validate_evidence", "refine_document_search", "validate_evidence", "generate_answer"],
+    "alternate_valid_trajectories": [
+      ["search_document", "validate_evidence", "refine_document_search", "validate_evidence", "generate_answer"],
+      ["search_document", "refine_document_search", "validate_evidence", "generate_answer"]
+    ],
+    "expected_steps": 3
+  }
+]

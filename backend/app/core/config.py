@@ -17,8 +17,8 @@ os.makedirs(CHROMADB_DIR, exist_ok=True)
 
 # RAG & Embedding Settings
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "jinaai/jina-embeddings-v2-base-en")
-CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "600"))
-CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "80"))
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "900"))
+CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "150"))
 DEFAULT_TOP_K = int(os.getenv("DEFAULT_TOP_K", "4"))
 
 # Late Chunking Settings

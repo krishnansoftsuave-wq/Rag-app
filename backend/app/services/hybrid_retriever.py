@@ -16,6 +16,21 @@ def tokenize(text: str) -> List[str]:
     return re.findall(r'\w+', text.lower())
 
 
+def expand_query(query: str) -> str:
+    """Enriches queries with semantic synonyms for domain-specific RAG concepts."""
+    expanded = query
+    q_lower = query.lower()
+
+    if "regional failure" in q_lower or "regional outage" in q_lower or "region failure" in q_lower:
+        expanded += " disaster recovery cross-region replication read replicas availability zones"
+    elif "rpo" in q_lower or "rto" in q_lower:
+        expanded += " recovery point objective recovery time objective data loss disaster"
+    elif "session storage" in q_lower or "temporary" in q_lower or "persistent" in q_lower:
+        expanded += " novacache in-memory redis session storage critical business data"
+
+    return expanded
+
+
 class HybridRetrieverService:
     def __init__(self, vector_store: VectorStoreService):
         self.vector_store = vector_store
@@ -159,12 +174,13 @@ class HybridRetrieverService:
         if self.vector_store.collection.count() == 0:
             return []
 
+        expanded_q = expand_query(query)
         fetch_k = max(top_k * 3, 10)
 
         # 1. Vector Search
         vector_candidates = []
         if search_mode in ["hybrid", "vector"]:
-            query_embedding = self.embedding_model.encode([query]).tolist()[0]
+            query_embedding = self.embedding_model.encode([expanded_q]).tolist()[0]
             vector_candidates = self.vector_store.query_vectors(
                 query_embedding=query_embedding,
                 fetch_k=fetch_k,
@@ -174,7 +190,7 @@ class HybridRetrieverService:
         # 2. BM25 Search
         bm25_candidates = []
         if search_mode in ["hybrid", "bm25"]:
-            bm25_candidates = self._bm25_search(query=query, doc_ids=doc_ids, fetch_k=fetch_k)
+            bm25_candidates = self._bm25_search(query=expanded_q, doc_ids=doc_ids, fetch_k=fetch_k)
 
         # 3. Output mode formatting
         if search_mode == "vector":

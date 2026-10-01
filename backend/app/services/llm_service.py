@@ -69,9 +69,9 @@ Detailed Answer:"""
                                 )
                         except Exception as err:
                             err_str = str(err)
-                            if "503" in err_str and attempt == 0:
+                            if ("503" in err_str or "429" in err_str or "RESOURCE_EXHAUSTED" in err_str) and attempt == 0:
                                 import time
-                                time.sleep(1)
+                                time.sleep(3)
                                 continue
                             logger.warning(f"Gemini API model '{model_name}' failed: {err}. Trying next candidate model...")
                             break

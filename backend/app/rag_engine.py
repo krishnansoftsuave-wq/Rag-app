@@ -52,13 +52,15 @@ class LegacyRAGEngineBridge:
         query: str,
         doc_ids: Optional[List[str]] = None,
         top_k: int = 4,
-        search_mode: str = "hybrid"
+        search_mode: str = "hybrid",
+        api_key: Optional[str] = None
     ) -> List[SourceCitation]:
         return hybrid_retriever_service.retrieve_context(
             query=query,
             doc_ids=doc_ids,
             top_k=top_k,
-            search_mode=search_mode
+            search_mode=search_mode,
+            api_key=api_key
         )
 
     def generate_answer(

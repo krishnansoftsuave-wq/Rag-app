@@ -138,7 +138,8 @@ async def chat(request: ChatRequest):
         sources = hybrid_retriever_service.retrieve_context(
             query=request.question,
             doc_ids=request.doc_ids,
-            search_mode=request.search_mode or "hybrid"
+            search_mode=request.search_mode or "hybrid",
+            api_key=request.api_key
         )
         response = llm_service.generate_answer(
             question=request.question,

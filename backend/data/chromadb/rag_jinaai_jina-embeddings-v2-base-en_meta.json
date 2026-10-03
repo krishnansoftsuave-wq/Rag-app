@@ -16,5 +16,14 @@
     "file_size": 16039,
     "total_chunks": 37,
     "chunking_strategy": "standard"
+  },
+  "b53d367b": {
+    "doc_id": "b53d367b",
+    "filename": "DocuBrain_Cloud_SLA_2026.txt",
+    "file_type": ".txt",
+    "upload_time": "2026-10-03 20:44:32",
+    "file_size": 716,
+    "total_chunks": 3,
+    "chunking_strategy": "agentic"
   }
 }

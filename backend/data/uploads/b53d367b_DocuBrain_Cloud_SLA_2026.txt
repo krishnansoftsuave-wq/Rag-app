@@ -1,0 +1,14 @@
+
+    DocuBrain Cloud SLA Policy 2026.
+    Section 1: Availability
+    DocuBrain guarantees a 99.99% monthly uptime for all Enterprise RAG API endpoints.
+    If monthly uptime drops below 99.99%, customers receive a 15% service credit.
+    
+    Section 2: Security & Encryption
+    All customer document embeddings in ChromaDB are encrypted at rest using AES-256.
+    Document text transmitted over network uses TLS 1.3 encryption.
+    
+    Section 3: Data Retention & Privacy
+    Customer documents uploaded to DocuBrain are retained strictly for the duration of the customer's subscription.
+    Upon account cancellation, all stored vector embeddings and document chunks are permanently erased within 24 hours.
+    

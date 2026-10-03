@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Database, Key, CheckCircle, AlertCircle, FileText, Sparkles, BarChart2 } from 'lucide-react';
+import { Database, Key, CheckCircle, AlertCircle, FileText, Sparkles, BarChart2, User, LogOut, Lock } from 'lucide-react';
 
 interface HeaderProps {
   isBackendConnected: boolean;
@@ -10,6 +10,9 @@ interface HeaderProps {
   totalChunks: number;
   hasApiKey: boolean;
   onOpenApiKeyModal: () => void;
+  currentUser?: any;
+  onOpenAuthModal?: () => void;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -18,31 +21,34 @@ export const Header: React.FC<HeaderProps> = ({
   totalChunks,
   hasApiKey,
   onOpenApiKeyModal,
+  currentUser,
+  onOpenAuthModal,
+  onLogout,
 }) => {
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-4 shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Brand logo & title */}
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
             <Sparkles className="w-5 h-5 animate-pulse" />
           </div>
           <div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent">
-              DocuBrain RAG
+            <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900 bg-clip-text text-transparent">
+              DocuBrain RAG & MCP
             </h1>
             <p className="text-xs text-slate-500 font-medium">
-              Document Retrieval & AI Question Answering
+              Enterprise Document RAG with Authenticated MCP Tools
             </p>
           </div>
         </div>
 
         {/* Status badges & controls */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3 sm:space-x-4">
           {/* Agent Evaluation Nav Link */}
           <Link
             href="/evaluation"
-            className="flex items-center space-x-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-all"
+            className="hidden md:flex items-center space-x-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-all"
           >
             <BarChart2 className="w-3.5 h-3.5 text-indigo-600" />
             <span>Agent Evaluation</span>
@@ -65,7 +71,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Connection status */}
           <div
-            className={`flex items-center space-x-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${
+            className={`hidden lg:flex items-center space-x-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${
               isBackendConnected
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                 : 'bg-rose-50 text-rose-700 border-rose-200'
@@ -94,8 +100,31 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <Key className="w-3.5 h-3.5" />
-            <span>{hasApiKey ? 'API Key Set' : 'Configure LLM Key'}</span>
+            <span className="hidden sm:inline">{hasApiKey ? 'API Key Set' : 'Configure Key'}</span>
           </button>
+
+          {/* User Auth Profile / Login Button */}
+          {currentUser ? (
+            <div className="flex items-center space-x-2 bg-indigo-50/80 border border-indigo-200/80 rounded-lg px-2.5 py-1 text-xs">
+              <User className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="font-bold text-indigo-900 max-w-[100px] truncate">{currentUser.username}</span>
+              <button
+                onClick={onLogout}
+                title="Log Out"
+                className="text-slate-400 hover:text-rose-600 ml-1"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onOpenAuthModal}
+              className="flex items-center space-x-1.5 text-xs font-bold px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white shadow-md shadow-indigo-500/20 transition-all"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>Log In</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

@@ -6,7 +6,9 @@ import { DocumentUpload } from '@/components/DocumentUpload';
 import { DocumentList } from '@/components/DocumentList';
 import { ChatInterface } from '@/components/ChatInterface';
 import { ApiKeyModal } from '@/components/ApiKeyModal';
-import { fetchHealth, fetchDocuments, deleteDocument } from '@/lib/api';
+import { AuthModal } from '@/components/AuthModal';
+import { McpDocSelector } from '@/components/McpDocSelector';
+import { fetchHealth, fetchDocuments, deleteDocument, fetchCurrentUser, removeAuthToken } from '@/lib/api';
 import { DocumentMetadata } from '@/types';
 
 export default function Home() {
@@ -16,11 +18,27 @@ export default function Home() {
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
   const [apiKey, setApiKey] = useState<string>('');
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // Load API Key from LocalStorage on client start
+  // Load API Key & Current User session on mount
   useEffect(() => {
     const savedKey = localStorage.getItem('rag_gemini_api_key');
     if (savedKey) setApiKey(savedKey);
+
+    const savedUser = localStorage.getItem('docubrain_user');
+    if (savedUser) {
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch (e) {}
+    }
+
+    fetchCurrentUser().then((user) => {
+      if (user && user.user_id !== 'default_user') {
+        setCurrentUser(user);
+        localStorage.setItem('docubrain_user', JSON.stringify(user));
+      }
+    });
   }, []);
 
   // Poll backend health & fetch documents
@@ -74,37 +92,56 @@ export default function Home() {
     }
   };
 
+  const handleLogout = () => {
+    removeAuthToken();
+    setCurrentUser(null);
+    loadData();
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/50">
+    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
       <Header
         isBackendConnected={isBackendConnected}
         totalDocuments={documents.length}
         totalChunks={totalChunks}
         hasApiKey={Boolean(apiKey)}
         onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+        currentUser={currentUser}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Sidebar: Document Management */}
-        <div className="lg:col-span-4 space-y-6 flex flex-col">
-          <DocumentUpload onUploadSuccess={handleUploadSuccess} />
-          <div className="flex-1 min-h-[350px]">
-            <DocumentList
-              documents={documents}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+        {/* Top MCP Document Targeted Selection Bar */}
+        <McpDocSelector
+          documents={documents}
+          selectedDocId={selectedDocIds.length > 0 ? selectedDocIds[0] : null}
+          onSelectDoc={(docId) => setSelectedDocIds(docId ? [docId] : [])}
+          onRefreshDocs={loadData}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Sidebar: Document Management */}
+          <div className="lg:col-span-4 space-y-6 flex flex-col">
+            <DocumentUpload onUploadSuccess={handleUploadSuccess} />
+            <div className="flex-1 min-h-[350px]">
+              <DocumentList
+                documents={documents}
+                selectedDocIds={selectedDocIds}
+                onToggleSelectDoc={handleToggleSelectDoc}
+                onDeleteDoc={handleDeleteDoc}
+              />
+            </div>
+          </div>
+
+          {/* Right Main Panel: Interactive Chat & Citations */}
+          <div className="lg:col-span-8">
+            <ChatInterface
               selectedDocIds={selectedDocIds}
-              onToggleSelectDoc={handleToggleSelectDoc}
-              onDeleteDoc={handleDeleteDoc}
+              apiKey={apiKey}
+              hasDocuments={documents.length > 0}
             />
           </div>
-        </div>
-
-        {/* Right Main Panel: Interactive Chat & Citations */}
-        <div className="lg:col-span-8">
-          <ChatInterface
-            selectedDocIds={selectedDocIds}
-            apiKey={apiKey}
-            hasDocuments={documents.length > 0}
-          />
         </div>
       </main>
 
@@ -113,6 +150,15 @@ export default function Home() {
         onClose={() => setIsApiKeyModalOpen(false)}
         currentApiKey={apiKey}
         onSaveApiKey={handleSaveApiKey}
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={(user) => {
+          setCurrentUser(user);
+          loadData();
+        }}
       />
     </div>
   );

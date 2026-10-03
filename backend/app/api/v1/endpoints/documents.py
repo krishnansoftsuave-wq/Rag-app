@@ -21,6 +21,9 @@ from app.services import (
     agentic_chunker_service,
 )
 
+from app.core.security import get_current_user_from_token
+from app.services.user_service import UserService
+
 router = APIRouter()
 
 
@@ -34,10 +37,13 @@ async def upload_document(
     use_late_chunking: Optional[bool] = Query(
         None,
         description="Legacy override for Late Chunking"
-    )
+    ),
+    current_user: Dict[str, Any] = Depends(get_current_user_from_token)
 ):
     if not file.filename:
         raise HTTPException(status_code=400, detail="File must have a name")
+
+    user_id = current_user.get("user_id", "default_user")
 
     # Determine strategy
     if use_late_chunking is True:
@@ -121,7 +127,6 @@ async def upload_document(
                 use_late_chunking=False,
             )
 
-
         # Add to vector store with strategy metadata
         vector_store_service.add_chunks(
             doc_id=doc_id,
@@ -132,6 +137,9 @@ async def upload_document(
             upload_time=upload_time,
             chunking_strategy=strategy
         )
+
+        # Record document ownership
+        UserService.associate_document(doc_id=doc_id, user_id=user_id, filename=sanitized_filename)
 
         # Rebuild BM25 index
         hybrid_retriever_service.build_bm25_index()
@@ -151,7 +159,6 @@ async def upload_document(
             document=doc_meta
         )
 
-
     except Exception as e:
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -159,8 +166,14 @@ async def upload_document(
 
 
 @router.get("/documents", response_model=DocumentListResponse)
-async def get_documents():
+async def get_documents(current_user: Dict[str, Any] = Depends(get_current_user_from_token)):
+    user_id = current_user.get("user_id", "default_user")
+    user_doc_ids = UserService.get_user_doc_ids(user_id)
+    
     docs_data = vector_store_service.get_all_documents()
+    if user_doc_ids:
+        docs_data = [d for d in docs_data if d.get("doc_id") in user_doc_ids]
+        
     documents = [DocumentMetadata(**d) for d in docs_data]
     return DocumentListResponse(
         documents=documents,
@@ -169,10 +182,14 @@ async def get_documents():
 
 
 @router.delete("/documents/{doc_id}")
-async def delete_document(doc_id: str):
+async def delete_document(
+    doc_id: str,
+    current_user: Dict[str, Any] = Depends(get_current_user_from_token)
+):
     success = vector_store_service.delete_document(doc_id)
     if not success:
         raise HTTPException(status_code=404, detail="Document not found")
 
     hybrid_retriever_service.build_bm25_index()
     return {"message": f"Document {doc_id} successfully deleted"}
+

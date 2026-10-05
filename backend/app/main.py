@@ -20,3 +20,9 @@ app.add_middleware(
 
 # Mount aggregated API routes under /api
 app.include_router(api_router, prefix="/api")
+
+# Import FastMCP server instance and mount SSE app for Claude Desktop / MCP Connectors
+from app.mcp.server import mcp
+app.mount("/mcp", mcp.http_app(transport="sse"))
+
+

@@ -1,8 +1,8 @@
 import os
 import uuid
 from datetime import datetime
-from typing import Optional
-from fastapi import APIRouter, File, UploadFile, HTTPException, Query, status
+from typing import Optional, Dict, Any
+from fastapi import APIRouter, File, UploadFile, HTTPException, Query, status, Depends
 
 from app.core.config import UPLOAD_DIR, USE_LATE_CHUNKING
 from app.schemas.document import (

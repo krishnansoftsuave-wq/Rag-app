@@ -17,7 +17,7 @@ def tokenize(text: str) -> List[str]:
     return re.findall(r'\w+', text.lower())
 
 
-def expand_query(query: str, api_key: Optional[str] = None) -> str:
+def expand_query(query: str) -> str:
     """Enriches queries dynamically using the LLM by generating domain-specific synonyms and concepts."""
     prompt = f"""You are an expert search query expander for domain-agnostic document retrieval.
 Given the user query, generate 3 to 5 domain-specific search synonyms, related technical concepts, or keyword expansions that might appear in relevant target documents.
@@ -26,7 +26,7 @@ Output ONLY the expanded search keywords separated by spaces. Do not include mar
 User Query: {query}
 Expanded Terms:"""
     # An LLM is required: raises LLMUnavailableError when no model can answer
-    text, model_name = complete(prompt, api_key=api_key)
+    text, model_name = complete(prompt)
     expanded_terms = re.sub(r'[\*\`\#\"]', '', text.strip().replace("\n", " ")).strip()
     if not expanded_terms:
         return query
@@ -172,13 +172,12 @@ class HybridRetrieverService:
         query: str,
         doc_ids: Optional[List[str]] = None,
         top_k: int = DEFAULT_TOP_K,
-        search_mode: str = "hybrid",
-        api_key: Optional[str] = None
+        search_mode: str = "hybrid"
     ) -> List[SourceCitation]:
         if self.vector_store.collection.count() == 0:
             return []
 
-        expanded_q = expand_query(query, api_key=api_key)
+        expanded_q = expand_query(query)
         fetch_k = max(top_k * 3, 10)
 
         # 1. Vector Search

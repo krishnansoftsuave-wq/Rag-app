@@ -48,6 +48,7 @@ class AgentState:
     doc_ids: Optional[List[str]] = None
     retrieved_evidence: List[Dict[str, Any]] = field(default_factory=list)
     tool_results: List[Dict[str, Any]] = field(default_factory=list)
+    mcp_results: List[Dict[str, Any]] = field(default_factory=list)  # calls to external MCP server tools
     iteration_count: int = 0
     input_tokens: int = 0
     output_tokens: int = 0

@@ -1,62 +1,52 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FileText, ChevronDown, ChevronUp, ExternalLink, Percent } from 'lucide-react';
+import { FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { SourceCitation } from '@/types';
 
 interface SourceCardProps {
   sources: SourceCitation[];
 }
 
+/** The passages an answer was built from: a "Sources" pill that expands into the retrieved chunks. */
 export const SourceCard: React.FC<SourceCardProps> = ({ sources }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   if (!sources || sources.length === 0) return null;
+  const files = Array.from(new Set(sources.map((s) => s.filename)));
 
   return (
-    <div className="mt-3 border border-emerald-200/80 bg-emerald-50/30 rounded-xl overflow-hidden text-xs">
+    <div className="mt-3">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3.5 py-2.5 flex items-center justify-between hover:bg-emerald-50/60 transition-colors text-slate-700 font-medium"
+        className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-600 hover:bg-zinc-50 transition-colors"
       >
-        <div className="flex items-center space-x-2">
-          <FileText className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Retrieved Context ({sources.length} sources)</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-[11px] text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full font-semibold">
-            Top match: {Math.round(sources[0].score * 100)}% match
-          </span>
-          {isOpen ? (
-            <ChevronUp className="w-4 h-4 text-slate-400" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-slate-400" />
-          )}
-        </div>
+        <FileText className="w-3.5 h-3.5 text-zinc-500" />
+        <span className="font-medium">
+          {sources.length} source{sources.length === 1 ? '' : 's'}
+        </span>
+        <span className="text-zinc-400 truncate max-w-[220px]">· {files.join(', ')}</span>
+        {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-zinc-400" /> : <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />}
       </button>
 
       {isOpen && (
-        <div className="px-3.5 pb-3.5 pt-1 space-y-2.5 border-t border-emerald-100">
+        <div className="mt-2 space-y-2">
           {sources.map((source, index) => (
             <div
               key={`${source.doc_id}_${source.chunk_index}_${index}`}
-              className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs space-y-1.5"
+              className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 space-y-1.5"
             >
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="font-semibold text-slate-800 flex items-center gap-1">
-                  <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-800 font-bold inline-flex items-center justify-center text-[10px]">
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <span className="font-medium text-zinc-800 flex items-center gap-1.5 min-w-0">
+                  <span className="w-5 h-5 rounded-full bg-zinc-200 text-zinc-700 font-semibold inline-flex items-center justify-center text-[10px] shrink-0">
                     {index + 1}
                   </span>
-                  {source.filename}
-                  <span className="text-slate-400 font-normal">
-                    (Chunk #{source.chunk_index})
-                  </span>
+                  <span className="truncate">{source.filename}</span>
+                  <span className="text-zinc-400 font-normal shrink-0">· chunk {source.chunk_index}</span>
                 </span>
-                <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-mono font-medium">
-                  {Math.round(source.score * 100)}% score
-                </span>
+                <span className="text-zinc-500 font-mono shrink-0">{Math.round(source.score * 100)}%</span>
               </div>
-              <p className="text-slate-600 bg-slate-50 p-2 rounded font-mono text-[11px] leading-relaxed whitespace-pre-wrap border border-slate-100">
+              <p className="text-zinc-600 text-xs leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
                 {source.content}
               </p>
             </div>

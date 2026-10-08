@@ -21,7 +21,6 @@ class AgenticChunkerService:
         self,
         full_text: str,
         embedding_model: Any,
-        api_key: Optional[str] = None,
         max_chunk_size: int = CHUNK_SIZE * 2
     ) -> List[Dict[str, Any]]:
         """
@@ -40,7 +39,7 @@ class AgenticChunkerService:
 
         # Try LLM Agentic boundary extraction (raises LLMUnavailableError when no model can answer)
         try:
-            chunks = self._llm_agentic_split(full_text, sentences, api_key, max_chunk_size)
+            chunks = self._llm_agentic_split(full_text, sentences, max_chunk_size)
             if chunks:
                 logger.info(f"Agentic chunking: LLM generated {len(chunks)} topic-bounded chunks.")
                 return chunks
@@ -55,7 +54,6 @@ class AgenticChunkerService:
         self,
         full_text: str,
         sentences: List[Dict[str, Any]],
-        api_key: Optional[str],
         max_chunk_size: int
     ) -> Optional[List[Dict[str, Any]]]:
         """Queries the LLM to identify logical topic boundaries across sentences."""
@@ -83,7 +81,7 @@ Example format:
   {{"start_index": 4, "end_index": 8}}
 ]
 """
-        response_text, _ = complete(prompt, api_key=api_key)
+        response_text, _ = complete(prompt)
 
         # Clean potential markdown wrapping (e.g. ```json ... ```)
         cleaned_json = re.sub(r'```(?:json)?\s*', '', response_text).strip('` \n\r')

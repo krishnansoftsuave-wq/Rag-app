@@ -22,7 +22,6 @@ class FixedRAGWorkflow:
         question: str,
         document_id: Optional[str] = None,
         question_id: str = "q_fixed",
-        api_key: Optional[str] = None,
         top_k: int = 4
     ) -> AgentState:
         state = AgentState(question=question, document_id=document_id)
@@ -79,7 +78,7 @@ class FixedRAGWorkflow:
         # ---------------------------------------------------------------------
         start_t3 = time.time()
         combined_context = "\n\n".join([c["full_content"] for c in accumulated_chunks.values()])
-        val_res = validate_evidence(question=question, retrieved_context=combined_context, api_key=api_key)
+        val_res = validate_evidence(question=question, retrieved_context=combined_context)
         lat3 = (time.time() - start_t3) * 1000
 
         in_tok3 = val_res.get("input_tokens", 0)
@@ -115,8 +114,7 @@ class FixedRAGWorkflow:
 
         chat_res = llm_service.generate_answer(
             question=question,
-            sources=citations,
-            api_key=api_key
+            sources=citations
         )
         lat4 = (time.time() - start_t4) * 1000
 

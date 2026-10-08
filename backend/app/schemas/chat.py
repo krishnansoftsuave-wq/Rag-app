@@ -13,10 +13,20 @@ class SourceCitation(BaseModel):
 class ChatRequest(BaseModel):
     question: str
     doc_ids: Optional[List[str]] = None
-    api_key: Optional[str] = None
     provider: Optional[str] = "gemini"  # "gemini", "openai", or "auto"
     search_mode: Optional[str] = "hybrid"  # "hybrid", "vector", or "bm25"
     mode: Optional[str] = "compare"  # "compare", "agent", "workflow", or "standard"
+
+
+class McpToolResult(BaseModel):
+    """A call the agent made to a tool on an external MCP server. A result with "type" and "data" is an artifact."""
+    server_id: str
+    server_name: str
+    tool_name: str
+    arguments: Dict[str, Any] = {}  # as chosen by the model; backend-filled context parameters are not included
+    success: bool
+    result: Any = None
+    error: Optional[str] = None
 
 
 class SystemExecutionResult(BaseModel):
@@ -30,6 +40,7 @@ class SystemExecutionResult(BaseModel):
     sources: List[SourceCitation]
     used_fallback: bool
     trace: List[Dict[str, Any]] = []
+    mcp_results: List[McpToolResult] = []
 
 
 class ComparisonMetrics(BaseModel):
@@ -49,4 +60,5 @@ class ChatResponse(BaseModel):
     agent_result: Optional[SystemExecutionResult] = None
     workflow_result: Optional[SystemExecutionResult] = None
     comparison: Optional[ComparisonMetrics] = None
+    mcp_results: List[McpToolResult] = []
 

@@ -28,6 +28,7 @@ export interface SystemExecutionResult {
   sources: SourceCitation[];
   used_fallback: boolean;
   trace: AgentStepTrace[];
+  mcp_results?: McpToolResult[];
 }
 
 export interface ComparisonMetrics {
@@ -52,19 +53,24 @@ export interface Artifact {
   created_at: string;
 }
 
-export interface ArtifactState {
-  status: 'loading' | 'ready' | 'error';
-  artifact?: Artifact;
-  serverName?: string;
-  error?: string;
+/** A tool the backend agent called on an external MCP server. A result with `type` and `data` is an Artifact. */
+export interface McpToolResult {
+  server_id: string;
+  server_name: string;
+  tool_name: string;
+  arguments: Record<string, any>;
+  success: boolean;
+  result?: any;
+  error?: string | null;
 }
 
-export interface GenerateArtifactResponse {
-  success: boolean;
-  artifact?: Artifact;
-  server_id?: string;
-  server_name?: string;
-  error?: string;
+export const isArtifact = (value: any): value is Artifact =>
+  Boolean(value) && typeof value === 'object' && 'type' in value && 'data' in value;
+
+/** The document a user question was asked about. */
+export interface ChatAttachment {
+  doc_id: string;
+  filename: string;
 }
 
 export interface ChatMessage {
@@ -72,14 +78,24 @@ export interface ChatMessage {
   sender: 'user' | 'assistant';
   text: string;
   timestamp: string;
-  question?: string;
+  attachment?: ChatAttachment;
+  error?: boolean; // an assistant message reporting that the question could not be answered
   sources?: SourceCitation[];
   used_fallback?: boolean;
   mode?: 'compare' | 'agent' | 'workflow' | 'standard';
   agent_result?: SystemExecutionResult;
   workflow_result?: SystemExecutionResult;
   comparison?: ComparisonMetrics;
-  artifact?: ArtifactState;
+  mcp_results?: McpToolResult[];
+}
+
+/** A conversation in the sidebar; kept in the browser (localStorage), per user. */
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  messages: ChatMessage[];
 }
 
 export interface DocumentUploadResponse {
@@ -101,13 +117,12 @@ export interface ChatResponse {
   agent_result?: SystemExecutionResult;
   workflow_result?: SystemExecutionResult;
   comparison?: ComparisonMetrics;
+  mcp_results?: McpToolResult[];
 }
 
 export interface HealthResponse {
   status: string;
   vector_db_connected: boolean;
-  total_documents: number;
-  total_chunks: number;
 }
 
 export interface AgentStepTrace {
@@ -122,74 +137,5 @@ export interface AgentStepTrace {
   step_cost: number;
   cumulative_cost: number;
   details?: Record<string, any>;
-}
-
-export interface QuestionResult {
-  system: 'agent' | 'workflow';
-  question_id: string;
-  question: string;
-  question_type: string;
-  passed: boolean;
-  score: number;
-  latency_ms: number;
-  input_tokens: number;
-  output_tokens: number;
-  total_tokens: number;
-  cost: number;
-  iterations: number;
-  termination_reason: string;
-  final_answer: string;
-  trace?: AgentStepTrace[];
-}
-
-export interface SystemMetrics {
-  pass_rate: number;
-  outcome_pass_rate?: number;
-  trajectory_pass_rate?: number;
-  outcome_vs_trajectory_gap?: number;
-  tool_choice_accuracy?: number;
-  argument_validity_rate?: number;
-  step_efficiency?: number;
-  p50_latency_ms: number;
-  cost_p50?: number;
-  cost_max?: number;
-  total_tokens: number;
-  total_cost: number;
-  cost_per_question: number;
-  total_questions: number;
-  failure_modes?: Record<string, number>;
-  gap_cases?: Array<{
-    question_id: string;
-    question: string;
-    actual_trajectory: string[];
-    expected_trajectory: string[];
-    reason: string;
-  }>;
-}
-
-export interface MitigationPrice {
-  mitigation_description: string;
-  latency_delta_ms: number;
-  token_delta_per_question: number;
-  cost_delta_per_question: number;
-  outcome_pass_rate_delta: number;
-  trajectory_pass_rate_delta: number;
-}
-
-export interface RegressionRow {
-  failure_mode: string;
-  original_agent: number;
-  fixed_agent: number;
-  change: string;
-}
-
-export interface EvaluationSummary {
-  agent: SystemMetrics;
-  workflow: SystemMetrics;
-  verdict: string;
-  mitigation_price?: MitigationPrice;
-  regression_matrix?: RegressionRow[];
-  agent_question_results: QuestionResult[];
-  workflow_question_results: QuestionResult[];
 }
 

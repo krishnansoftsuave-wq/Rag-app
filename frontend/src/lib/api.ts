@@ -3,10 +3,6 @@ import {
   DocumentListResponse,
   ChatResponse,
   HealthResponse,
-  EvaluationSummary,
-  SourceCitation,
-  ArtifactType,
-  GenerateArtifactResponse,
 } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
@@ -84,23 +80,6 @@ export async function fetchCurrentUser() {
   return res.json();
 }
 
-// MCP Tools Execution
-export async function callMcpTool(name: string, args: Record<string, any> = {}) {
-  const res = await fetch(`${API_BASE_URL}/v1/mcp/tools/call`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getAuthHeaders(),
-    },
-    body: JSON.stringify({ name, arguments: args }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: 'MCP Tool execution failed' }));
-    throw new Error(err.detail || 'MCP Tool call failed');
-  }
-  return res.json();
-}
-
 export async function fetchHealth(): Promise<HealthResponse> {
   const res = await fetch(`${API_BASE_URL}/health`);
   if (!res.ok) {
@@ -156,7 +135,6 @@ export async function deleteDocument(docId: string): Promise<{ message: string }
 export async function sendChatMessage(
   question: string,
   docIds?: string[],
-  apiKey?: string,
   mode: 'compare' | 'agent' | 'workflow' | 'standard' = 'agent'
 ): Promise<ChatResponse> {
   const res = await fetch(`${API_BASE_URL}/chat`, {
@@ -168,7 +146,6 @@ export async function sendChatMessage(
     body: JSON.stringify({
       question,
       doc_ids: docIds,
-      api_key: apiKey,
       mode,
     }),
   });
@@ -178,25 +155,6 @@ export async function sendChatMessage(
     throw new Error(errorData.detail || 'Failed to process question');
   }
 
-  return res.json();
-}
-
-export async function fetchEvaluationResults(): Promise<EvaluationSummary> {
-  const res = await fetch(`${API_BASE_URL}/evaluation/results`);
-  if (!res.ok) {
-    throw new Error('Failed to fetch evaluation benchmark results');
-  }
-  return res.json();
-}
-
-export async function runEvaluationBenchmark(): Promise<{ message: string; summary: EvaluationSummary }> {
-  const res = await fetch(`${API_BASE_URL}/evaluation/run?system=both`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-  });
-  if (!res.ok) {
-    throw new Error('Failed to run benchmark');
-  }
   return res.json();
 }
 
@@ -229,12 +187,13 @@ export async function addExternalMcpServer(
   url: string,
   transport: string = 'sse',
   authType: string = 'none',
-  authToken: string = ''
+  authToken: string = '',
+  description: string = ''
 ) {
   const res = await fetch(`${API_BASE_URL}/v1/mcp/external-servers`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify({ name, url, transport, auth_type: authType, auth_token: authToken }),
+    body: JSON.stringify({ name, url, transport, auth_type: authType, auth_token: authToken, description }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Failed to add server' }));
@@ -278,21 +237,5 @@ export async function callRemoteMcpTool(serverId: string, toolName: string, args
     body: JSON.stringify({ server_id: serverId, tool_name: toolName, arguments: args }),
   });
   if (!res.ok) throw new Error('Failed to execute remote MCP tool');
-  return res.json();
-}
-
-// Chat artifact built by the external MCP server exposing `generate_artifact`
-export async function generateArtifact(
-  question: string,
-  answer: string,
-  sources: SourceCitation[],
-  artifactType: ArtifactType | 'auto' = 'auto'
-): Promise<GenerateArtifactResponse> {
-  const res = await fetch(`${API_BASE_URL}/v1/mcp/artifacts`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify({ question, answer, sources, artifact_type: artifactType }),
-  });
-  if (!res.ok) throw new Error('Failed to generate artifact');
   return res.json();
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { MarkdownMessage } from './MarkdownMessage';
 import { SystemExecutionResult, ComparisonMetrics } from '@/types';
 import { SourceCard } from './SourceCard';
 import {
@@ -188,7 +188,7 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
                 </div>
 
                 <div className="prose prose-xs max-w-none text-xs text-slate-800 leading-relaxed">
-                  <ReactMarkdown>{agentResult.answer}</ReactMarkdown>
+                  <MarkdownMessage>{agentResult.answer}</MarkdownMessage>
                 </div>
 
                 {agentResult.sources && agentResult.sources.length > 0 && (
@@ -243,7 +243,7 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({
                 </div>
 
                 <div className="prose prose-xs max-w-none text-xs text-slate-800 leading-relaxed">
-                  <ReactMarkdown>{workflowResult.answer}</ReactMarkdown>
+                  <MarkdownMessage>{workflowResult.answer}</MarkdownMessage>
                 </div>
 
                 {workflowResult.sources && workflowResult.sources.length > 0 && (

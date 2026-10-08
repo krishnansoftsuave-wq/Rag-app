@@ -4,7 +4,7 @@ can answer, callers get an LLMUnavailableError explaining why (missing key, rate
 
 LLM_PROVIDER picks the backend (defaults to "groq" when GROQ_API_KEY is set, otherwise "gemini"):
 - groq:   Groq's OpenAI-compatible API. Key from GROQ_API_KEY, models from GROQ_MODELS (in order).
-- gemini: Google Gemini. Key from the request (UI settings) or GEMINI_API_KEY.
+- gemini: Google Gemini. Key from GEMINI_API_KEY.
 
 Every request has a timeout and no hidden SDK retries; calls fall back across the provider's models.
 A model that is rate-limited, overloaded, missing or slow is put on a cooldown per key, so later calls
@@ -37,12 +37,14 @@ MODELS = {
 }
 NO_KEY_MESSAGE = {
     "groq": "No Groq API key configured. Set GROQ_API_KEY in backend/.env and restart the backend.",
-    "gemini": "No Gemini API key configured. Add one in Settings or set GEMINI_API_KEY in backend/.env.",
+    "gemini": "No Gemini API key configured. Set GEMINI_API_KEY in backend/.env and restart the backend.",
 }
 
 # (marker found in the error text, cooldown seconds, readable reason). A "try again in ..." hint in the
 # error text replaces the cooldown; 0 means remember the reason without cooling the model down.
 _ERROR_RULES = [
+    # 413: this one request exceeds the model's per-minute token cap; the model is not rate-limited, try the next
+    ("Request too large", 0, "request too large for the model's tokens-per-minute limit (413)"),
     ("RESOURCE_EXHAUSTED", 300, "quota exceeded (429)"),
     ("rate_limit", 60, "rate limit reached (429)"),
     ("429", 120, "rate limit reached (429)"),
@@ -60,6 +62,7 @@ _ERROR_RULES = [
 ]
 _RETRY_HINT = re.compile(r"(?:try again|retry) in\s+(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:([\d.]+)s)?", re.IGNORECASE)
 _MAX_COOLDOWN_SECONDS = 24 * 3600
+MAX_COOLDOWN_WAIT_SECONDS = 20  # wait for a model this close to leaving cooldown instead of failing
 
 _cooldown_until: Dict[str, float] = {}
 _last_failure: Dict[str, str] = {}
@@ -75,10 +78,8 @@ class LLMUnavailableError(RuntimeError):
 # Keys, clients, cooldowns
 # ---------------------------------------------------------------------------
 
-def _resolve_key(api_key: Optional[str]) -> str:
-    if PROVIDER == "groq":
-        return GROQ_API_KEY  # the key saved in the UI is a Gemini key, so it is not sent to Groq
-    return api_key or GEMINI_API_KEY
+def _resolve_key() -> str:
+    return GROQ_API_KEY if PROVIDER == "groq" else GEMINI_API_KEY
 
 
 def _key_id(key: str) -> str:
@@ -136,26 +137,43 @@ def _unavailable_error(key: str) -> LLMUnavailableError:
     return LLMUnavailableError(f"{PROVIDER_LABEL} is unavailable (last error: {reason}).{retry}")
 
 
-def _with_fallback(api_key: Optional[str], call: Callable[[Any, str], Any]) -> Tuple[Any, str]:
+def _with_fallback(call: Callable[[Any, str], Any]) -> Tuple[Any, str]:
     """Run call(client, model) on the first model that succeeds. Returns (result, model)."""
-    key = _resolve_key(api_key)
+    key = _resolve_key()
     if not key:
         raise LLMUnavailableError(NO_KEY_MESSAGE.get(PROVIDER, f"No API key configured for {PROVIDER_LABEL}."))
     client = _client(key)
-    for model in available_models(key):
-        try:
-            return call(client, model), model
-        except Exception as err:
-            _mark_failed(key, model, err)
-            logger.warning(f"{PROVIDER_LABEL} model {model} failed: {err}")
+    for attempt in range(2):
+        for model in available_models(key):
+            try:
+                return call(client, model), model
+            except Exception as err:
+                _mark_failed(key, model, err)
+                logger.warning(f"{PROVIDER_LABEL} model {model} failed: {err}")
+        # Every model is cooling down. Per-minute rate limits clear within seconds, so wait once for the
+        # soonest model instead of failing the request; longer limits (daily caps) fail immediately.
+        wait = _soonest_cooldown(key)
+        if attempt or wait is None or wait > MAX_COOLDOWN_WAIT_SECONDS:
+            break
+        logger.info(f"All {PROVIDER_LABEL} models are rate-limited; waiting {wait:.0f}s for the next one")
+        time.sleep(wait)
     raise _unavailable_error(key)
+
+
+def _soonest_cooldown(key: str) -> Optional[float]:
+    """Seconds until the first of this key's models leaves cooldown; None if a model is available or none failed."""
+    if available_models(key):
+        return None
+    kid, now = _key_id(key), time.time()
+    waits = [until - now for k, until in _cooldown_until.items() if k.startswith(f"{kid}:") and until > now]
+    return min(waits) if waits else None
 
 
 # ---------------------------------------------------------------------------
 # Single-turn completion
 # ---------------------------------------------------------------------------
 
-def complete(prompt: str, api_key: Optional[str] = None, json_mode: bool = False) -> Tuple[str, str]:
+def complete(prompt: str, json_mode: bool = False) -> Tuple[str, str]:
     """Answer one prompt. Returns (text, model) or raises LLMUnavailableError."""
     def call(client: Any, model: str) -> str:
         if PROVIDER == "groq":
@@ -169,7 +187,7 @@ def complete(prompt: str, api_key: Optional[str] = None, json_mode: bool = False
             raise ValueError("empty response")
         return text
 
-    return _with_fallback(api_key, call)
+    return _with_fallback(call)
 
 
 # ---------------------------------------------------------------------------
@@ -191,8 +209,6 @@ def _tool_schema(fn: Callable) -> Dict[str, Any]:
     hints = typing.get_type_hints(fn)
     properties, required = {}, []
     for name, param in inspect.signature(fn).parameters.items():
-        if name == "api_key":
-            continue  # credentials are never chosen by the model
         hint = hints.get(name, str)
         inner = [a for a in typing.get_args(hint) if a is not type(None)]
         base = inner[0] if typing.get_origin(hint) is typing.Union and inner else hint
@@ -219,11 +235,41 @@ def _parse_args(raw: Optional[str]) -> Dict[str, Any]:
         return {}
 
 
-class ToolChat:
-    """Provider-neutral tool-calling conversation. The caller runs the tools and reports results back."""
+def choose_tool_call(system: str, user: str, tools: List[Dict[str, Any]]) -> List[ToolCall]:
+    """One forced tool-choice turn: the model must call one of the given tools (already-described as
+    {"name", "description", "parameters": <JSON schema>}, e.g. tools listed by an MCP server). Returns its calls."""
+    if PROVIDER == "groq":
+        msg, _ = _with_fallback(lambda client, model: client.chat.completions.create(
+            model=model,
+            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+            tools=[{"type": "function", "function": t} for t in tools],
+            tool_choice="required",
+            temperature=0.1,
+        ).choices[0].message)
+        return [ToolCall(tc.id, tc.function.name, _parse_args(tc.function.arguments)) for tc in (msg.tool_calls or [])]
 
-    def __init__(self, system: str, user: str, tools: List[Callable], api_key: Optional[str] = None):
-        self.api_key = api_key
+    from google.genai import types
+    config = types.GenerateContentConfig(
+        system_instruction=system,
+        tools=[types.Tool(function_declarations=[
+            types.FunctionDeclaration(name=t["name"], description=t["description"], parameters_json_schema=t["parameters"])
+            for t in tools
+        ])],
+        tool_config=types.ToolConfig(function_calling_config=types.FunctionCallingConfig(mode="ANY")),
+        temperature=0.1,
+        automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
+    )
+    response, _ = _with_fallback(lambda client, model: client.models.generate_content(
+        model=model, contents=user, config=config,
+    ))
+    return [ToolCall(c.id or c.name, c.name, dict(c.args or {})) for c in (response.function_calls or [])]
+
+
+class ToolChat:
+    """Provider-neutral tool-calling conversation. The caller runs the tools and reports results back.
+    Tools are Python functions; their schema is built from the signature and docstring."""
+
+    def __init__(self, system: str, user: str, tools: List[Callable]):
         if PROVIDER == "groq":
             self.history: List[Any] = [{"role": "system", "content": system}, {"role": "user", "content": user}]
             self._schemas = [_tool_schema(fn) for fn in tools]
@@ -241,7 +287,7 @@ class ToolChat:
     def step(self) -> Tuple[List[ToolCall], str]:
         """Ask the model for its next move: tool calls to run, or (when there are none) the final answer."""
         if PROVIDER == "groq":
-            msg, _ = _with_fallback(self.api_key, lambda client, model: client.chat.completions.create(
+            msg, _ = _with_fallback(lambda client, model: client.chat.completions.create(
                 model=model, messages=self.history, tools=self._schemas, tool_choice="auto", temperature=0.2,
             ).choices[0].message)
             if not msg.tool_calls:
@@ -256,7 +302,7 @@ class ToolChat:
             })
             return [ToolCall(tc.id, tc.function.name, _parse_args(tc.function.arguments)) for tc in msg.tool_calls], ""
 
-        response, _ = _with_fallback(self.api_key, lambda client, model: client.models.generate_content(
+        response, _ = _with_fallback(lambda client, model: client.models.generate_content(
             model=model, contents=self.history, config=self._config,
         ))
         calls = response.function_calls or []
@@ -264,6 +310,14 @@ class ToolChat:
             return [], response.text or ""
         self.history.append(response.candidates[0].content)
         return [ToolCall(c.id or c.name, c.name, dict(c.args or {})) for c in calls], ""
+
+    def add_note(self, text: str) -> None:
+        """Give the model context for its next turn, e.g. what an MCP tool already produced for the user."""
+        if PROVIDER == "groq":
+            self.history.append({"role": "user", "content": text})
+        else:
+            from google.genai import types
+            self.history.append(types.Content(role="user", parts=[types.Part.from_text(text=text)]))
 
     def add_tool_result(self, call: ToolCall, result: Any) -> None:
         if PROVIDER == "groq":

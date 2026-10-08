@@ -52,7 +52,15 @@ MAX_SOURCES = 8
 MAX_SOURCE_CHARS = 2000  # the backend already sends focused excerpts of long chunks within this size
 
 # Initialize Standalone FastMCP Server
-standalone_mcp = FastMCP("DocuBrain-Artifact-Studio")
+# The instructions are this server's self-description: clients read them on connect to decide when to use it
+standalone_mcp = FastMCP(
+    "DocuBrain-Artifact-Studio",
+    instructions=(
+        "Creates visual artifacts from document content: charts and graphs of numbers, comparison tables, "
+        "timelines of dates and events, mind maps of topics, and key-point summaries. Use it when the user wants "
+        "to see information visually or in a structured format, not for plain questions."
+    ),
+)
 
 
 def _shorten(text: str, limit: int) -> str:
@@ -223,15 +231,15 @@ async def generate_artifact(
     artifact_type: str = "auto",
 ) -> Dict[str, Any]:
     """
-    MCP TOOL: generate_artifact
-    Description: Turn a DocuBrain chat answer and its retrieved document context into a visual artifact
-    (key_points, table, timeline, chart or mindmap) using the configured LLM (Groq or Gemini). Content comes
-    only from the supplied sources. Requires an API key; returns an error when the LLM is unavailable.
+    Create a visual artifact from the retrieved document passages. Use it only when the user asks to see
+    information visually or in a structured format: a chart or graph (comparable numbers), a table
+    (comparison or list), a timeline (dates, history), a mind map (overview of topics) or a key-points summary.
+    Do not use it for plain questions. Content comes only from the supplied sources.
     Args:
-        question: The question the user asked in DocuBrain chat
-        answer: The answer DocuBrain returned
+        question: The user's request, e.g. "Show the storage tier prices as a chart"
+        answer: The answer DocuBrain returned, if any
         sources: Retrieved chunks, each {"filename": str, "content": str, "chunk_index": int}
-        artifact_type: "auto" (pick the best fit) or one of key_points, table, timeline, chart, mindmap
+        artifact_type: chart, table, timeline, mindmap or key_points when the user asked for one; otherwise "auto"
     """
     sources = [s for s in (sources or []) if isinstance(s, dict) and s.get("content")][:MAX_SOURCES]
     if not sources:
@@ -253,8 +261,8 @@ async def generate_artifact(
 @standalone_mcp.tool()
 def list_artifact_types() -> Dict[str, Any]:
     """
-    MCP TOOL: list_artifact_types
-    Description: List the artifact formats generate_artifact can produce, and which LLM provider is used and whether its API key is configured.
+    List the visual formats generate_artifact can create. Use only when the user asks which chart, table or
+    diagram formats are available.
     """
     return {
         "types": [{"type": k, "description": v} for k, v in ARTIFACT_TYPES.items()],

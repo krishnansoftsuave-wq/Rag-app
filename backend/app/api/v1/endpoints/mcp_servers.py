@@ -9,7 +9,9 @@ router = APIRouter()
 @router.get("/external-servers")
 async def list_external_mcp_servers():
     """List all configured external standalone MCP servers and their discovered tools."""
-    servers = mcp_client_manager.list_servers()
+    # Status and tools are kept in memory only: connect once to servers not checked since the backend started
+    await mcp_client_manager.check_untested_servers()
+    servers = [mcp_client_manager.public_view(srv) for srv in mcp_client_manager.list_servers()]
     active_tools = mcp_client_manager.get_all_active_tools()
     return {
         "success": True,
@@ -43,9 +45,10 @@ async def add_external_mcp_server(req: AddServerRequest):
         url=req.url,
         transport=req.transport or "sse",
         auth_type=req.auth_type or "none",
-        auth_token=req.auth_token
+        auth_token=req.auth_token,
+        description=req.description
     )
-    return {"success": True, "server": server_entry}
+    return {"success": True, "server": mcp_client_manager.public_view(server_entry)}
 
 
 @router.post("/external-servers/{server_id}/toggle")
@@ -55,30 +58,16 @@ async def toggle_mcp_server(server_id: str, payload: Dict[str, Any] = Body(...))
     updated = mcp_client_manager.toggle_server(server_id, is_active)
     if not updated:
         raise HTTPException(status_code=404, detail=f"Server '{server_id}' not found.")
-    return {"success": True, "server": updated}
+    return {"success": True, "server": mcp_client_manager.public_view(updated)}
 
 
 @router.post("/external-servers/{server_id}/refresh")
 async def refresh_mcp_server(server_id: str):
     """Refresh health check and re-discover tools for a configured MCP server."""
-    srv = mcp_client_manager.servers.get(server_id)
+    srv = await mcp_client_manager.refresh_server(server_id)
     if not srv:
         raise HTTPException(status_code=404, detail=f"Server '{server_id}' not found.")
-
-    test_res = await mcp_client_manager.test_server_connection(
-        url=srv["url"],
-        transport=srv.get("transport", "sse"),
-        auth_type=srv.get("auth_type", "none"),
-        auth_token=srv.get("auth_token", "")
-    )
-
-    srv["status"] = test_res["status"]
-    srv["last_tested"] = test_res["tested_at"]
-    srv["discovered_tools"] = test_res["tools"]
-    srv["error_detail"] = test_res.get("error")
-    mcp_client_manager._save_servers()
-
-    return {"success": True, "server": srv}
+    return {"success": True, "server": mcp_client_manager.public_view(srv)}
 
 
 @router.delete("/external-servers/{server_id}")

@@ -11,7 +11,17 @@ from app.agents.tools import (
     estimate_tokens,
 )
 from app.services import llm_service
-from app.services.llm.client import ToolChat
+from app.services.llm.client import ToolChat, choose_tool_call
+from app.services.retrieval.excerpts import focus_terms, focused_excerpt, prepare_sources
+from app.mcp.client.agent_tools import (
+    McpAgentTool,
+    is_artifact,
+    load_server_tools,
+    run_agent_tool,
+    select_mcp_server,
+    summarize_for_llm,
+)
+from app.mcp.client.manager import mcp_client_manager
 from app.schemas.chat import SourceCitation
 
 # Gemini pricing defaults ($0.075 / 1M input, $0.30 / 1M output)
@@ -25,10 +35,21 @@ def calculate_llm_cost(input_tokens: int, output_tokens: int) -> float:
     return input_cost + output_cost
 
 
-def _compact_for_llm(tool_result: Any) -> Any:
-    """Drop the 300-char snippet from search results before sending them to the LLM; it also gets full_content."""
+MAX_RESULTS_FOR_LLM = 5
+MAX_CHUNK_CHARS_FOR_LLM = 1000
+
+
+def _compact_for_llm(tool_result: Any, terms: set) -> Any:
+    """Search results as the LLM sees them: the top results only, no duplicate snippet, and long chunks reduced
+    to their sentences relevant to the question, so the conversation stays within per-request token limits.
+    (All retrieved chunks are still kept in full for the sources and the final answer.)"""
     if isinstance(tool_result, dict) and isinstance(tool_result.get("results"), list):
-        return {**tool_result, "results": [{k: v for k, v in r.items() if k != "snippet"} for r in tool_result["results"]]}
+        compact = []
+        for r in tool_result["results"][:MAX_RESULTS_FOR_LLM]:
+            item = {k: v for k, v in r.items() if k != "snippet"}
+            item["full_content"] = focused_excerpt(str(r.get("full_content", "")), terms, MAX_CHUNK_CHARS_FOR_LLM)
+            compact.append(item)
+        return {**tool_result, "results": compact}
     return tool_result
 
 
@@ -42,12 +63,12 @@ class AdaptiveRAGAgent:
         question: str,
         document_id: Optional[str] = None,
         question_id: str = "q_adaptive",
-        api_key: Optional[str] = None,
         top_k: int = 4
     ) -> AgentState:
         state = AgentState(question=question, document_id=document_id)
 
         accumulated_chunks: Dict[str, Dict[str, Any]] = {}
+        terms = focus_terms(question)
 
         # LLM function-calling orchestration. An LLM is required: errors propagate as LLMUnavailableError
         system_instruction = (
@@ -61,11 +82,24 @@ class AdaptiveRAGAgent:
             "Use tools as needed to answer the user question. Call tools iteratively until sufficient evidence is found, then provide your complete final answer."
         )
 
+        # MCP stages 1-2: decide whether this request needs an external MCP server; only then connect and list its tools.
+        # Stage 3 (_run_mcp_action) runs once the documents have been searched, so the tool gets the passages.
+        mcp_tools: Dict[str, McpAgentTool] = {}
+        server = self._select_mcp_server(state, question, question_id)
+        if server:
+            mcp_tools = self._load_mcp_tools(state, server, question_id)
+        mcp_pending = bool(mcp_tools)
+        if mcp_pending:
+            system_instruction += (
+                f"\nThe output this request asks for (for example a visual or structured view) is produced separately "
+                f"by the MCP server '{server['name']}' and shown to the user. Focus on finding the facts in the documents "
+                "and keep your final answer short; do not reproduce that output yourself."
+            )
+
         chat = ToolChat(
             system=system_instruction,
             user=f"Question: {question}\nDocument ID filter: {document_id or 'All'}",
             tools=EXPOSED_TOOL_FUNCTIONS,
-            api_key=api_key,
         )
 
         while True:
@@ -81,7 +115,9 @@ class AdaptiveRAGAgent:
                     total_cost=state.estimated_cost,
                     total_tokens=state.total_tokens
                 )
-                self._generate_final_answer(state, accumulated_chunks, api_key)
+                if mcp_pending:
+                    self._run_mcp_action(state, server, mcp_tools, accumulated_chunks, terms, question_id)
+                self._generate_final_answer(state, accumulated_chunks)
                 return state
 
             start_t = time.time()
@@ -144,9 +180,19 @@ class AdaptiveRAGAgent:
                     )
 
                     # Report the tool result back to the LLM conversation
-                    chat.add_tool_result(call, _compact_for_llm(tool_result))
+                    chat.add_tool_result(call, _compact_for_llm(tool_result, terms))
+
+                # MCP stage 3 as soon as the documents have been searched; the model hears what it produced
+                if mcp_pending and accumulated_chunks:
+                    mcp_pending = False
+                    note = self._run_mcp_action(state, server, mcp_tools, accumulated_chunks, terms, question_id)
+                    if note:
+                        chat.add_note(note)
 
             else:
+                if mcp_pending:
+                    mcp_pending = False
+                    self._run_mcp_action(state, server, mcp_tools, accumulated_chunks, terms, question_id)
                 # LLM reached final text response
                 state.final_answer = final_text
                 state.completed = True
@@ -171,21 +217,162 @@ class AdaptiveRAGAgent:
                 )
                 return state
 
+    def _select_mcp_server(
+        self, state: AgentState, question: str, question_id: str
+    ) -> Optional[Dict[str, Any]]:
+        """Stage 1: the LLM sees only the enabled MCP servers' descriptions and picks one, or none."""
+        if not mcp_client_manager.active_servers():
+            return None
+        start_t = time.time()
+        server, reason = select_mcp_server(question)
+        latency_ms = (time.time() - start_t) * 1000
+        chosen = server["name"] if server else "none"
+        state.record_step(
+            action="mcp_select_server",
+            input_summary=f"servers={len(mcp_client_manager.active_servers())}",
+            result_summary=f"server={chosen} reason={reason}",
+            latency_ms=latency_ms,
+            raw_args={"question": question},
+            details={"server_id": server["id"] if server else None, "reason": reason}
+        )
+        self.logger.log_step(
+            question_id=question_id,
+            step=state.iteration_count,
+            action="mcp_select_server",
+            safe_input_summary=f"servers={len(mcp_client_manager.active_servers())}",
+            result_summary=f"server={chosen}",
+            latency_ms=latency_ms,
+            tokens=0,
+            cost=0.0
+        )
+        return server
+
+    def _load_mcp_tools(self, state: AgentState, server: Dict[str, Any], question_id: str) -> Dict[str, McpAgentTool]:
+        """Stage 2: connect to the chosen server now and list its tools for the LLM."""
+        start_t = time.time()
+        tools, error = load_server_tools(server, reserved_names=set(REGISTERED_TOOLS))
+        latency_ms = (time.time() - start_t) * 1000
+        state.record_step(
+            action="mcp_list_tools",
+            input_summary=f"server={server['name']}",
+            result_summary=f"tools={[t.tool_name for t in tools]}" if not error else f"error={error}",
+            latency_ms=latency_ms,
+            raw_args={"server_id": server["id"]},
+            details={"tools": [t.tool_name for t in tools], "error": error}
+        )
+        self.logger.log_step(
+            question_id=question_id,
+            step=state.iteration_count,
+            action="mcp_list_tools",
+            safe_input_summary=f"server={server['name']}",
+            result_summary=f"tools={len(tools)}" if not error else "connection failed",
+            latency_ms=latency_ms,
+            tokens=0,
+            cost=0.0
+        )
+        if error:
+            # Tell the user why the MCP output is missing; the answer still comes from the documents
+            state.mcp_results.append({
+                "server_id": server["id"], "server_name": server["name"], "tool_name": "list_tools",
+                "arguments": {}, "success": False, "result": None,
+                "error": f"Could not connect to the MCP server: {error}",
+            })
+        return {t.name: t for t in tools}
+
+    def _run_mcp_action(
+        self,
+        state: AgentState,
+        server: Dict[str, Any],
+        mcp_tools: Dict[str, McpAgentTool],
+        accumulated_chunks: Dict[str, Dict[str, Any]],
+        terms: set,
+        question_id: str
+    ) -> Optional[str]:
+        """Stage 3: the LLM gets only the chosen server's tools and must pick the one (and its arguments) that
+        fulfils the request; the backend runs it. Returns a note for the research conversation, if any."""
+        start_t = time.time()
+        calls = choose_tool_call(
+            system=(
+                f"You fulfil the user's request with the tools of the MCP server '{server['name']}'. Pick the tool "
+                "that does what the request asks and fill in its arguments from the request. The relevant document "
+                "passages are supplied to the tool automatically."
+            ),
+            user=f"User request: {state.question}",
+            tools=[t.declaration for t in mcp_tools.values()],
+        )
+        notes = []
+        for call in calls:
+            tool = mcp_tools.get(call.name)
+            if not tool:
+                continue
+            summary = self._run_mcp_tool(state, tool, dict(call.args), accumulated_chunks, terms)
+            latency_ms = (time.time() - start_t) * 1000
+            state.record_step(
+                action=f"mcp_call:{tool.tool_name}",
+                input_summary=json.dumps(call.args),
+                result_summary=json.dumps(summary)[:200],
+                latency_ms=latency_ms,
+                raw_args=dict(call.args),
+                details={"server": server["name"]}
+            )
+            self.logger.log_step(
+                question_id=question_id,
+                step=state.iteration_count,
+                action=f"mcp_call:{tool.tool_name}",
+                safe_input_summary=f"args={call.args}",
+                result_summary="ok" if "error" not in summary else "error",
+                latency_ms=latency_ms,
+                tokens=0,
+                cost=0.0
+            )
+            notes.append(f"{tool.tool_name}: {json.dumps(summary)}")
+        if not notes:
+            return None
+        return ("The MCP server already produced output for the user (shown as a card under your answer): "
+                + "; ".join(notes) + ". In your final answer, refer to it in one short sentence; do not reproduce it.")
+
+    def _ensure_evidence(self, state: AgentState, accumulated_chunks: Dict[str, Dict[str, Any]]) -> None:
+        """Search the documents once if nothing was retrieved yet (budget ran out, or a tool needs context first)."""
+        if accumulated_chunks:
+            return
+        res = search_document(query=state.question, document_id=state.document_id)
+        for chunk in res.get("results", []):
+            accumulated_chunks[f"{chunk.get('doc_id')}_{chunk.get('chunk_index')}"] = chunk
+        state.retrieved_evidence = list(accumulated_chunks.values())
+
+    def _run_mcp_tool(
+        self,
+        state: AgentState,
+        tool: McpAgentTool,
+        args: Dict[str, Any],
+        accumulated_chunks: Dict[str, Dict[str, Any]],
+        terms: set
+    ) -> Dict[str, Any]:
+        """Call an external MCP tool with the retrieved passages as context; keep its full result for the response."""
+        self._ensure_evidence(state, accumulated_chunks)
+        context = {"sources": prepare_sources(list(accumulated_chunks.values()), terms), "answer": ""}
+        response = run_agent_tool(tool, args, context)
+        state.mcp_results.append({
+            "server_id": tool.server_id,
+            "server_name": tool.server_name,
+            "tool_name": tool.tool_name,
+            "arguments": args,
+            "success": bool(response.get("success")),
+            "result": response.get("result"),
+            "error": response.get("error"),
+        })
+        return summarize_for_llm(response)
+
     def _generate_final_answer(
         self,
         state: AgentState,
-        accumulated_chunks: Dict[str, Dict[str, Any]],
-        api_key: Optional[str]
+        accumulated_chunks: Dict[str, Dict[str, Any]]
     ):
         start_t = time.time()
 
-        # A budget can run out before any search ran (e.g. while Gemini was rate-limited);
+        # A budget can run out before any search ran (e.g. while the LLM was rate-limited);
         # never answer without looking at the documents at least once
-        if not accumulated_chunks:
-            res = search_document(query=state.question, document_id=state.document_id)
-            for chunk in res.get("results", []):
-                accumulated_chunks[f"{chunk.get('doc_id')}_{chunk.get('chunk_index')}"] = chunk
-            state.retrieved_evidence = list(accumulated_chunks.values())
+        self._ensure_evidence(state, accumulated_chunks)
 
         citations = []
         for c in accumulated_chunks.values():
@@ -199,10 +386,17 @@ class AdaptiveRAGAgent:
                 )
             )
 
+        # Artifacts already built by MCP tools are shown as cards; the answer should point to them, not repeat them
+        artifacts = [r["result"] for r in state.mcp_results if r.get("success") and is_artifact(r.get("result"))]
+        extra = "".join(
+            f"A {a.get('type')} titled '{a.get('title')}' is shown to the user under your answer. "
+            "Refer to it in one short sentence and do not reproduce it as a table or list.\n"
+            for a in artifacts
+        )
         chat_res = llm_service.generate_answer(
             question=state.question,
             sources=citations,
-            api_key=api_key
+            extra_instructions=extra
         )
         latency_ms = (time.time() - start_t) * 1000
 

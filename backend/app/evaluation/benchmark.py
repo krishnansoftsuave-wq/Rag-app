@@ -125,8 +125,7 @@ class BenchmarkRunner:
     def run_benchmark(
         self,
         system_type: str = "both",
-        document_id: Optional[str] = None,
-        api_key: Optional[str] = None
+        document_id: Optional[str] = None
     ) -> Dict[str, Any]:
         questions = self.load_questions()
         os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -150,8 +149,7 @@ class BenchmarkRunner:
                 agent_state = self.agent.run(
                     question=q_text,
                     document_id=doc_id,
-                    question_id=qid,
-                    api_key=api_key
+                    question_id=qid
                 )
                 eval_res = evaluate_answer(agent_state.final_answer, expected, q_type)
                 trace_dicts = [t.to_dict() for t in agent_state.trace]
@@ -184,8 +182,7 @@ class BenchmarkRunner:
                 workflow_state = self.workflow.run(
                     question=q_text,
                     document_id=doc_id,
-                    question_id=qid,
-                    api_key=api_key
+                    question_id=qid
                 )
                 eval_res = evaluate_answer(workflow_state.final_answer, expected, q_type)
                 trace_dicts = [t.to_dict() for t in workflow_state.trace]

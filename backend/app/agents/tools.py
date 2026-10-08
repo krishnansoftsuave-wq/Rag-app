@@ -233,8 +233,7 @@ def refine_document_search(
 
 def validate_evidence(
     question: str,
-    retrieved_context: str,
-    api_key: Optional[str] = None
+    retrieved_context: str
 ) -> Dict[str, Any]:
     """
     TOOL: validate_evidence
@@ -268,7 +267,7 @@ JSON Response:"""
     input_tokens = estimate_tokens(prompt)
 
     # An LLM is required: raises LLMUnavailableError when no model can answer
-    text, model_name = complete(prompt, api_key=api_key, json_mode=True)
+    text, model_name = complete(prompt, json_mode=True)
     output_tokens = estimate_tokens(text)
     cleaned = text.strip()
     if cleaned.startswith("```json"):

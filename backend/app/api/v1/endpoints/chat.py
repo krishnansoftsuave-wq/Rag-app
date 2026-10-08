@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
+    McpToolResult,
     SourceCitation,
     SystemExecutionResult,
     ComparisonMetrics
@@ -38,7 +39,8 @@ def _state_to_system_result(system_name: str, state: AgentState) -> SystemExecut
         termination_reason=state.termination_reason,
         sources=citations,
         used_fallback=state.used_fallback,
-        trace=[t.to_dict() for t in state.trace]
+        trace=[t.to_dict() for t in state.trace],
+        mcp_results=[McpToolResult(**r) for r in state.mcp_results]
     )
 
 
@@ -112,7 +114,7 @@ def chat(request: ChatRequest):
     mode = (request.mode or "agent").lower()
 
     if mode == "agent":
-        agent_state = agent_service.run(question=request.question, document_id=doc_id, api_key=request.api_key)
+        agent_state = agent_service.run(question=request.question, document_id=doc_id)
         agent_res = _state_to_system_result("agent", agent_state)
         return ChatResponse(
             question=request.question,
@@ -120,11 +122,12 @@ def chat(request: ChatRequest):
             sources=agent_res.sources,
             used_fallback=agent_res.used_fallback,
             mode="agent",
-            agent_result=agent_res
+            agent_result=agent_res,
+            mcp_results=agent_res.mcp_results
         )
 
     elif mode == "workflow":
-        workflow_state = workflow_service.run(question=request.question, document_id=doc_id, api_key=request.api_key)
+        workflow_state = workflow_service.run(question=request.question, document_id=doc_id)
         workflow_res = _state_to_system_result("workflow", workflow_state)
         return ChatResponse(
             question=request.question,
@@ -139,13 +142,11 @@ def chat(request: ChatRequest):
         sources = hybrid_retriever_service.retrieve_context(
             query=request.question,
             doc_ids=request.doc_ids,
-            search_mode=request.search_mode or "hybrid",
-            api_key=request.api_key
+            search_mode=request.search_mode or "hybrid"
         )
         response = llm_service.generate_answer(
             question=request.question,
             sources=sources,
-            api_key=request.api_key,
             provider=request.provider or "gemini"
         )
         return ChatResponse(
@@ -157,8 +158,8 @@ def chat(request: ChatRequest):
         )
 
     # Default mode == "compare"
-    agent_state = agent_service.run(question=request.question, document_id=doc_id, api_key=request.api_key)
-    workflow_state = workflow_service.run(question=request.question, document_id=doc_id, api_key=request.api_key)
+    agent_state = agent_service.run(question=request.question, document_id=doc_id)
+    workflow_state = workflow_service.run(question=request.question, document_id=doc_id)
 
     agent_res = _state_to_system_result("agent", agent_state)
     workflow_res = _state_to_system_result("workflow", workflow_state)
@@ -177,6 +178,7 @@ def chat(request: ChatRequest):
         mode="compare",
         agent_result=agent_res,
         workflow_result=workflow_res,
-        comparison=comparison
+        comparison=comparison,
+        mcp_results=agent_res.mcp_results  # only the agent calls MCP tools
     )
 

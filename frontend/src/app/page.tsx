@@ -8,6 +8,7 @@ import { ChatInterface } from '@/components/ChatInterface';
 import { ApiKeyModal } from '@/components/ApiKeyModal';
 import { AuthModal } from '@/components/AuthModal';
 import { McpDocSelector } from '@/components/McpDocSelector';
+import McpServerManagerModal from '@/components/McpServerManagerModal';
 import { fetchHealth, fetchDocuments, deleteDocument, fetchCurrentUser, removeAuthToken } from '@/lib/api';
 import { DocumentMetadata } from '@/types';
 
@@ -19,6 +20,7 @@ export default function Home() {
   const [apiKey, setApiKey] = useState<string>('');
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isMcpModalOpen, setIsMcpModalOpen] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   // Load API Key & Current User session on mount
@@ -106,6 +108,7 @@ export default function Home() {
         totalChunks={totalChunks}
         hasApiKey={Boolean(apiKey)}
         onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+        onOpenMcpModal={() => setIsMcpModalOpen(true)}
         currentUser={currentUser}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
@@ -159,6 +162,11 @@ export default function Home() {
           setCurrentUser(user);
           loadData();
         }}
+      />
+
+      <McpServerManagerModal
+        isOpen={isMcpModalOpen}
+        onClose={() => setIsMcpModalOpen(false)}
       />
     </div>
   );

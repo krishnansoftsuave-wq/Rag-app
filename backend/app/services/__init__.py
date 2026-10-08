@@ -1,16 +1,16 @@
-from app.services.document_processor import (
+from app.services.ingestion.document_processor import (
     process_document,
     process_document_with_text,
     extract_text_from_file,
     chunk_text,
     chunk_text_with_spans,
 )
-from app.services.vector_store import VectorStoreService
-from app.services.hybrid_retriever import HybridRetrieverService
-from app.services.llm_service import LLMService
-from app.services.late_chunker import LateChunkerService, late_chunker_service
-from app.services.semantic_chunker import SemanticChunkerService, semantic_chunker_service
-from app.services.agentic_chunker import AgenticChunkerService, agentic_chunker_service
+from app.services.retrieval.vector_store import VectorStoreService
+from app.services.retrieval.hybrid_retriever import HybridRetrieverService
+from app.services.llm.answer import LLMService
+from app.services.ingestion.late_chunker import LateChunkerService, late_chunker_service
+from app.services.ingestion.semantic_chunker import SemanticChunkerService, semantic_chunker_service
+from app.services.ingestion.agentic_chunker import AgenticChunkerService, agentic_chunker_service
 
 # Global service singletons
 vector_store_service = VectorStoreService()

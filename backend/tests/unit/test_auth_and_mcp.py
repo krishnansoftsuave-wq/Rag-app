@@ -3,11 +3,11 @@ import sys
 import json
 
 # Add backend directory to sys.path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))  # backend/
 
-from app.services.user_service import UserService
+from app.services.users import UserService
 from app.core.security import create_access_token, decode_access_token
-from app.mcp.server import (
+from app.mcp.server.rag_server import (
     upload_document,
     query_document_and_reply,
     summarize_document,

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, EmailStr, Field
 from typing import Dict, Any, Optional
-from app.services.user_service import UserService
+from app.services.users import UserService
 from app.core.security import create_access_token, get_current_user_from_token
 
 router = APIRouter()

@@ -5,8 +5,10 @@ import os
 
 
 from app.api.router import api_router
+from app.api.v1.endpoints import oauth
 from app.core.security import decode_access_token
-from app.mcp.server import mcp
+from app.mcp.server.rag_server import mcp
+from app.services.llm.client import LLMUnavailableError
 
 # FastMCP owns background task groups for Streamable HTTP. Its lifespan must be
 # passed to FastAPI, otherwise MCP requests fail after the app has started.
@@ -28,14 +30,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# OAuth 2.0 & MCP Discovery Metadata Endpoints
+# OAuth 2.1 discovery endpoints for MCP clients.
 @app.get("/.well-known/oauth-authorization-server")
 async def oauth_metadata(request: Request):
-    return JSONResponse(status_code=404, content={"detail": "OAuth authentication disabled"})
+    base_url = str(request.base_url).rstrip("/")
+    return {
+        "issuer": base_url,
+        "authorization_endpoint": f"{base_url}/authorize",
+        "token_endpoint": f"{base_url}/token",
+        "registration_endpoint": f"{base_url}/register",
+        "response_types_supported": ["code"],
+        "grant_types_supported": ["authorization_code"],
+        "code_challenge_methods_supported": ["S256"],
+        "token_endpoint_auth_methods_supported": ["none"],
+        "scopes_supported": ["mcp:tools"],
+    }
 
 @app.get("/.well-known/oauth-protected-resource")
+@app.get("/.well-known/oauth-protected-resource/mcp")
 async def oauth_protected_resource(request: Request):
-    return JSONResponse(status_code=404, content={"detail": "OAuth authentication disabled"})
+    base_url = str(request.base_url).rstrip("/")
+    return {
+        "resource": f"{base_url}/mcp/",
+        "authorization_servers": [base_url],
+        "scopes_supported": ["mcp:tools"],
+    }
 
 @app.get("/.well-known/mcp")
 async def mcp_metadata(request: Request):
@@ -45,7 +64,7 @@ async def mcp_metadata(request: Request):
         "version": "1.0.0",
         "transport": "streamable-http",
         "endpoint": f"{base_url}/mcp/",
-        "authentication": {"type": "none"}
+        "authentication": {"type": "oauth2"}
     }
 
 @app.get("/login")
@@ -57,22 +76,28 @@ async def login_redirect(request: Request):
     return RedirectResponse(url=target, status_code=302)
 
 
-# Pure ASGI Middleware setting default guest user context for open MCP access
+# Set the authenticated subject in request state after FastMCP validates a token.
 class PureASGIAuthMiddleware:
     def __init__(self, app):
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] == "http" and scope.get("path", "").startswith("/mcp"):
-            scope.setdefault("state", {})
-            scope["state"]["user_id"] = "default_user"
-            scope["state"]["username"] = "guest"
         await self.app(scope, receive, send)
 
 app.add_middleware(PureASGIAuthMiddleware)
 
+
+# An LLM is required (no local fallback): surface quota/key/overload problems as a clear 503
+@app.exception_handler(LLMUnavailableError)
+async def llm_unavailable_handler(request: Request, exc: LLMUnavailableError):
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+
 # Mount aggregated API routes under /api
 app.include_router(api_router, prefix="/api")
+# OAuth clients, including Claude, expect the standard root endpoints. The API
+# prefixed routes remain available for the application's own frontend.
+app.include_router(oauth.router)
 
 # Mount the standards-based Streamable HTTP transport at /mcp.
 app.mount("/mcp", mcp_app)

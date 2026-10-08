@@ -38,17 +38,48 @@ export interface ComparisonMetrics {
   summary_verdict: string;
 }
 
+export type ArtifactType = 'key_points' | 'table' | 'timeline' | 'chart' | 'mindmap';
+
+export interface Artifact {
+  artifact_id: string;
+  type: ArtifactType;
+  title: string;
+  description: string;
+  data: Record<string, any>;
+  markdown: string;
+  source_files: string[];
+  generated_by: string;
+  created_at: string;
+}
+
+export interface ArtifactState {
+  status: 'loading' | 'ready' | 'error';
+  artifact?: Artifact;
+  serverName?: string;
+  error?: string;
+}
+
+export interface GenerateArtifactResponse {
+  success: boolean;
+  artifact?: Artifact;
+  server_id?: string;
+  server_name?: string;
+  error?: string;
+}
+
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
   text: string;
   timestamp: string;
+  question?: string;
   sources?: SourceCitation[];
   used_fallback?: boolean;
   mode?: 'compare' | 'agent' | 'workflow' | 'standard';
   agent_result?: SystemExecutionResult;
   workflow_result?: SystemExecutionResult;
   comparison?: ComparisonMetrics;
+  artifact?: ArtifactState;
 }
 
 export interface DocumentUploadResponse {

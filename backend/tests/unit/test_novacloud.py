@@ -4,7 +4,7 @@ import json
 import time
 
 # Ensure backend root is on sys.path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))  # backend/
 
 import datetime
 from app.services import hybrid_retriever_service, vector_store_service, chunk_text_with_spans
@@ -327,7 +327,7 @@ def main():
     print(f"Failed: {failed_count} ({failed_count/len(eval_results)*100:.1f}%)", flush=True)
 
     # Save output to JSON file for detailed breakdown
-    out_path = os.path.join(os.path.dirname(__file__), "novacloud_eval_results.json")
+    out_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "novacloud_eval_results.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(eval_results, f, indent=2)
     print(f"\nDetailed evaluation results written to: {out_path}")

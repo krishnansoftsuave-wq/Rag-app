@@ -8,6 +8,7 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Storage paths
+DATA_DIR = str(BASE_DIR / "data")
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", str(BASE_DIR / "data" / "uploads"))
 CHROMADB_DIR = os.getenv("CHROMADB_DIR", str(BASE_DIR / "data" / "chromadb"))
 
@@ -29,3 +30,4 @@ LATE_CHUNKING_STRIDE = int(os.getenv("LATE_CHUNKING_STRIDE", "1024"))
 # API Keys
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")

@@ -10,6 +10,7 @@ interface HeaderProps {
   totalChunks: number;
   hasApiKey: boolean;
   onOpenApiKeyModal: () => void;
+  onOpenMcpModal?: () => void;
   currentUser?: any;
   onOpenAuthModal?: () => void;
   onLogout?: () => void;
@@ -21,6 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
   totalChunks,
   hasApiKey,
   onOpenApiKeyModal,
+  onOpenMcpModal,
   currentUser,
   onOpenAuthModal,
   onLogout,
@@ -45,6 +47,15 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Status badges & controls */}
         <div className="flex items-center space-x-3 sm:space-x-4">
+          {/* External MCP Client Modal Button */}
+          <button
+            onClick={onOpenMcpModal}
+            className="flex items-center space-x-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md shadow-purple-500/20 transition-all"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-white" />
+            <span>MCP Servers</span>
+          </button>
+
           {/* Agent Evaluation Nav Link */}
           <Link
             href="/evaluation"

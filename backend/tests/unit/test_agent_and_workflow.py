@@ -2,7 +2,7 @@ import sys
 import os
 import time
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))  # backend/
 
 from app.agents.tools import search_document, refine_document_search, validate_evidence
 from app.agents.budgets import AgentBudgets

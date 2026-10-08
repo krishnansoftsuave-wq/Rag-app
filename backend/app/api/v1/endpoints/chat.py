@@ -102,8 +102,9 @@ def _compute_comparison(agent_res: SystemExecutionResult, workflow_res: SystemEx
     )
 
 
+# Plain `def` so FastAPI runs the blocking agent/LLM calls in a worker thread instead of freezing the event loop
 @router.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+def chat(request: ChatRequest):
     if not request.question or not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 

@@ -3,7 +3,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.services.document_processor import process_document_with_text
+from app.services.ingestion.document_processor import process_document_with_text
 from app.services import vector_store_service, hybrid_retriever_service
 
 SAMPLE_KB_TEXT = """

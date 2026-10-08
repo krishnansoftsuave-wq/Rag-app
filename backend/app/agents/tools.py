@@ -1,4 +1,3 @@
-import os
 import json
 import time
 import math
@@ -6,7 +5,8 @@ import re
 from typing import Dict, Any, List, Optional
 from app.services import hybrid_retriever_service, llm_service
 from app.schemas.chat import SourceCitation
-from app.core.config import GEMINI_API_KEY, DEFAULT_TOP_K
+from app.core.config import DEFAULT_TOP_K
+from app.services.llm.client import complete
 
 
 def estimate_tokens(text: str) -> int:
@@ -249,8 +249,6 @@ def validate_evidence(
             "output_tokens": 30
         }
 
-    key_to_use = api_key or GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", "")
-
     prompt = f"""You are an objective evidence auditor for a RAG system.
 Evaluate if the Provided Context contains sufficient information to directly answer the User Question.
 
@@ -269,56 +267,30 @@ JSON Response:"""
 
     input_tokens = estimate_tokens(prompt)
 
-    if key_to_use:
-        try:
-            from google import genai
-            client = genai.Client(api_key=key_to_use)
-            for model_name in ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.6-flash", "gemini-flash-latest"]:
-                for attempt in range(2):
-                    try:
-                        response = client.models.generate_content(
-                            model=model_name,
-                            contents=prompt
-                        )
-                        if response and response.text:
-                            output_tokens = estimate_tokens(response.text)
-                            cleaned = response.text.strip()
-                            if cleaned.startswith("```json"):
-                                cleaned = cleaned[7:]
-                            if cleaned.endswith("```"):
-                                cleaned = cleaned[:-3]
-                            data = json.loads(cleaned.strip())
-                            return {
-                                "sufficient": bool(data.get("sufficient", False)),
-                                "reason": str(data.get("reason", "Evaluated via Gemini")),
-                                "missing_information": list(data.get("missing_information", [])),
-                                "input_tokens": input_tokens,
-                                "output_tokens": output_tokens
-                            }
-                    except Exception as err:
-                        if "503" in str(err) and attempt == 0:
-                            time.sleep(1)
-                            continue
-                        break
-        except Exception as e:
-            pass
-
-    # Heuristic local validation fallback when Gemini API key is unavailable or fails
-    context_lower = retrieved_context.lower()
-    q_words = [w.lower() for w in question.split() if len(w) > 3]
-    matches = [w for w in q_words if w in context_lower]
-    match_ratio = len(matches) / max(1, len(q_words))
-
-    sufficient = match_ratio >= 0.5 and len(retrieved_context) >= 150
-    reason = f"Local heuristic evaluated context relevance ({int(match_ratio*100)}% match)."
-    missing = [] if sufficient else [f"Detailed breakdown for '{question}'"]
-
+    # An LLM is required: raises LLMUnavailableError when no model can answer
+    text, model_name = complete(prompt, api_key=api_key, json_mode=True)
+    output_tokens = estimate_tokens(text)
+    cleaned = text.strip()
+    if cleaned.startswith("```json"):
+        cleaned = cleaned[7:]
+    if cleaned.endswith("```"):
+        cleaned = cleaned[:-3]
+    try:
+        data = json.loads(cleaned.strip())
+    except json.JSONDecodeError:
+        return {
+            "sufficient": False,
+            "reason": f"Model {model_name} returned an unreadable validation result.",
+            "missing_information": [question],
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens
+        }
     return {
-        "sufficient": sufficient,
-        "reason": reason,
-        "missing_information": missing,
+        "sufficient": bool(data.get("sufficient", False)),
+        "reason": str(data.get("reason", f"Evaluated via {model_name}")),
+        "missing_information": list(data.get("missing_information", [])),
         "input_tokens": input_tokens,
-        "output_tokens": 40
+        "output_tokens": output_tokens
     }
 
 

@@ -4,13 +4,12 @@ Uses Large Language Models (Gemini / GenAI) to analyze document structure,
 detect topic transitions, and determine optimal semantic chunk boundaries.
 Falls back gracefully to Semantic (Embedding-Based) chunking when API keys or network are unavailable.
 """
-import os
 import json
 import re
 from typing import List, Dict, Any, Optional
-from app.core.config import GEMINI_API_KEY, CHUNK_SIZE
+from app.core.config import CHUNK_SIZE
 from app.core.logger import get_logger
-from app.services.semantic_chunker import split_into_sentences_with_spans, semantic_chunker_service
+from app.services.ingestion.semantic_chunker import split_into_sentences_with_spans, semantic_chunker_service
 
 logger = get_logger("agentic_chunker")
 
@@ -39,17 +38,14 @@ class AgenticChunkerService:
                 "end_char": len(full_text)
             }]
 
-        key_to_use = api_key or GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", "")
-
-        # Try LLM Agentic boundary extraction if key is available
-        if key_to_use:
-            try:
-                chunks = self._llm_agentic_split(full_text, sentences, key_to_use, max_chunk_size)
-                if chunks:
-                    logger.info(f"Agentic chunking: LLM generated {len(chunks)} topic-bounded chunks.")
-                    return chunks
-            except Exception as e:
-                logger.warning(f"Agentic LLM chunking encountered issue: {e}. Falling back to Semantic Chunking.")
+        # Try LLM Agentic boundary extraction (raises LLMUnavailableError when no model can answer)
+        try:
+            chunks = self._llm_agentic_split(full_text, sentences, api_key, max_chunk_size)
+            if chunks:
+                logger.info(f"Agentic chunking: LLM generated {len(chunks)} topic-bounded chunks.")
+                return chunks
+        except Exception as e:
+            logger.warning(f"Agentic LLM chunking encountered issue: {e}. Falling back to Semantic Chunking.")
 
         # Fallback to Semantic (Embedding-Based) Chunking
         logger.info("Using Semantic Embedding Chunker fallback for Agentic mode.")
@@ -59,14 +55,12 @@ class AgenticChunkerService:
         self,
         full_text: str,
         sentences: List[Dict[str, Any]],
-        api_key: str,
+        api_key: Optional[str],
         max_chunk_size: int
     ) -> Optional[List[Dict[str, Any]]]:
-        """Queries Google Gemini to identify logical topic boundaries across sentences."""
-        from google import genai
+        """Queries the LLM to identify logical topic boundaries across sentences."""
+        from app.services.llm.client import complete
 
-        client = genai.Client(api_key=api_key)
-        
         # Format sentence units for prompt (cap total items to avoid context overflow)
         formatted_units = []
         for i, s in enumerate(sentences[:100]): # Limit to 100 sentences per prompt
@@ -89,23 +83,7 @@ Example format:
   {{"start_index": 4, "end_index": 8}}
 ]
 """
-        candidate_models = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.6-flash", "gemini-flash-latest"]
-        response_text = None
-
-        for model_name in candidate_models:
-            try:
-                res = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt
-                )
-                if res and res.text:
-                    response_text = res.text
-                    break
-            except Exception as err:
-                logger.warning(f"Agentic chunking model {model_name} error: {err}")
-
-        if not response_text:
-            return None
+        response_text, _ = complete(prompt, api_key=api_key)
 
         # Clean potential markdown wrapping (e.g. ```json ... ```)
         cleaned_json = re.sub(r'```(?:json)?\s*', '', response_text).strip('` \n\r')

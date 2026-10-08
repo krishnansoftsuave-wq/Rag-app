@@ -147,7 +147,7 @@ class SemanticChunkerService:
 
         except Exception as e:
             logger.warning(f"Semantic chunking failed: {e}. Falling back to standard chunking.")
-            from app.services.document_processor import chunk_text_with_spans
+            from app.services.ingestion.document_processor import chunk_text_with_spans
             return chunk_text_with_spans(full_text)
 
 

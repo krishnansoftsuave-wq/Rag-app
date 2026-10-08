@@ -1,11 +1,10 @@
 import sys
 import os
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))  # backend/
 
-from app.document_processor import process_document
-from app.rag_engine import rag_engine
-from app.models import ChatRequest
+from app.services.ingestion.document_processor import process_document
+from app.services import vector_store_service, hybrid_retriever_service, llm_service, late_chunker_service
 
 def run_test():
     print("1. Testing document chunker & text processor...")
@@ -29,17 +28,23 @@ def run_test():
     print(f"   Created {len(chunks)} chunks.")
     
     print("2. Indexing chunks into ChromaDB...")
-    rag_engine.add_document_chunks("doc123", "test_doc.txt", chunks, len(sample_text), "2026-08-22 18:45:00")
-    print(f"   Collection count: {rag_engine.collection.count()}")
+    embeddings = late_chunker_service.encode_chunks(
+        full_text=chunks[0].get("full_text", sample_text),
+        chunks=chunks,
+        model=hybrid_retriever_service.embedding_model,
+    )
+    vector_store_service.add_chunks("doc123", "test_doc.txt", chunks, embeddings, len(sample_text), "2026-08-22 18:45:00")
+    hybrid_retriever_service.build_bm25_index()
+    print(f"   Collection count: {vector_store_service.collection.count()}")
 
     print("3. Querying RAG Engine...")
-    sources = rag_engine.retrieve_context("What is Antigravity AI?")
+    sources = hybrid_retriever_service.retrieve_context(query="What is Antigravity AI?")
     print(f"   Retrieved {len(sources)} source citations.")
     for s in sources:
         clean_c = s.content[:80].encode('ascii', errors='ignore').decode('ascii')
         print(f"   - Match [{int(s.score*100)}%]: {clean_c}...")
 
-    answer_res = rag_engine.generate_answer("What is Antigravity AI?", sources)
+    answer_res = llm_service.generate_answer(question="What is Antigravity AI?", sources=sources)
     print("\n4. Generated RAG Response:")
     print("----------------------------------------")
     clean_ans = answer_res.answer.encode('ascii', errors='ignore').decode('ascii')
@@ -49,7 +54,8 @@ def run_test():
     # Clean up test file
     if os.path.exists(test_file):
         os.remove(test_file)
-    rag_engine.delete_document("doc123")
+    vector_store_service.delete_document("doc123")
+    hybrid_retriever_service.build_bm25_index()
     print("Backend test passed successfully!")
 
 if __name__ == "__main__":

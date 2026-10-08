@@ -3,9 +3,10 @@ import sqlite3
 import uuid
 from datetime import datetime
 from typing import Optional, Dict, Any, List
+from app.core.config import DATA_DIR
 from app.core.security import hash_password, verify_password
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "users.db")
+DB_PATH = os.path.join(DATA_DIR, "users.db")
 
 
 def init_db():

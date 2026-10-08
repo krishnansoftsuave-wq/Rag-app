@@ -1,15 +1,24 @@
 import secrets
+import base64
+import hashlib
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Depends, status, Request, Query, Form
 from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from pydantic import BaseModel, Field
 
-from app.services.user_service import UserService
+from app.services.users import UserService
 from app.core.security import create_access_token, decode_access_token, get_current_user_from_token
 
 router = APIRouter()
 
 OAUTH_CODES: Dict[str, Dict[str, Any]] = {}
+# Claude's connector uses this public client identifier. Additional MCP clients
+# are registered dynamically through the OAuth registration endpoint.
+OAUTH_CLIENTS: Dict[str, Dict[str, Any]] = {
+    "DocBrain_client": {
+        "redirect_uris": ["https://claude.ai/api/mcp/auth_callback"],
+    }
+}
 
 
 class OAuthTokenRequest(BaseModel):
@@ -20,6 +29,27 @@ class OAuthTokenRequest(BaseModel):
     code_verifier: Optional[str] = None
     username: Optional[str] = None
     password: Optional[str] = None
+
+
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+async def register_oauth_client(request: Request):
+    """OAuth dynamic client registration for MCP connectors."""
+    metadata = await request.json()
+    redirect_uris = metadata.get("redirect_uris") or []
+    if not isinstance(redirect_uris, list) or not redirect_uris:
+        raise HTTPException(status_code=400, detail="redirect_uris is required")
+    if any(not isinstance(uri, str) or not uri.startswith(("https://", "http://localhost")) for uri in redirect_uris):
+        raise HTTPException(status_code=400, detail="Invalid redirect URI")
+
+    client_id = f"mcp_{secrets.token_urlsafe(24)}"
+    OAUTH_CLIENTS[client_id] = {"redirect_uris": redirect_uris}
+    return {
+        "client_id": client_id,
+        "redirect_uris": redirect_uris,
+        "token_endpoint_auth_method": "none",
+        "grant_types": ["authorization_code"],
+        "response_types": ["code"],
+    }
 
 
 @router.get("/authorize")
@@ -52,12 +82,19 @@ async def oauth_authorize(
         except Exception:
             pass
 
+    client = OAUTH_CLIENTS.get(client_id)
+    if not client or redirect_uri not in client["redirect_uris"]:
+        raise HTTPException(status_code=400, detail="Unknown client or redirect URI")
+    if response_type != "code" or code_challenge_method != "S256" or not code_challenge:
+        raise HTTPException(status_code=400, detail="Authorization code flow with S256 PKCE is required")
+
     if not user_payload:
         login_url = f"/api/v1/oauth/login_page?redirect_uri={redirect_uri}&client_id={client_id}"
         if state:
             login_url += f"&state={state}"
         if code_challenge:
             login_url += f"&code_challenge={code_challenge}"
+        login_url += "&code_challenge_method=S256"
         return RedirectResponse(url=login_url, status_code=status.HTTP_302_FOUND)
 
     auth_code = secrets.token_urlsafe(32)
@@ -83,10 +120,12 @@ async def oauth_login_page(
     redirect_uri: str = Query(...),
     client_id: str = Query("docubrain_client"),
     state: Optional[str] = Query(None),
+    code_challenge: Optional[str] = Query(None),
     error: Optional[str] = Query(None)
 ):
     """HTML Login Form rendered for Claude / MCP Connector Authorization Popups."""
     state_input = f'<input type="hidden" name="state" value="{state}"/>' if state else ''
+    challenge_input = f'<input type="hidden" name="code_challenge" value="{code_challenge}"/>' if code_challenge else ''
     error_banner = f'<div style="background:#450a0a;border:1px solid #dc2626;color:#fca5a5;padding:12px;border-radius:8px;font-size:14px;margin-bottom:16px;">{error}</div>' if error else ''
 
     html_content = f"""
@@ -118,6 +157,7 @@ async def oauth_login_page(
                 <input type="hidden" name="redirect_uri" value="{redirect_uri}"/>
                 <input type="hidden" name="client_id" value="{client_id}"/>
                 {state_input}
+                {challenge_input}
                 <div class="group">
                     <label>Username or Email</label>
                     <input type="text" name="username" required placeholder="colleague_user" />
@@ -142,6 +182,7 @@ async def oauth_login_page_submit(
     redirect_uri: str = Form(...),
     client_id: str = Form("docubrain_client"),
     state: Optional[str] = Form(None)
+    , code_challenge: Optional[str] = Form(None)
 ):
     """Processes Form login submission and issues authorization code redirect."""
     user = UserService.authenticate_user(username.strip(), password)
@@ -165,7 +206,8 @@ async def oauth_login_page_submit(
         "username": user["username"],
         "email": user["email"],
         "client_id": client_id,
-        "redirect_uri": redirect_uri
+        "redirect_uri": redirect_uri,
+        "code_challenge": code_challenge,
     }
 
     delimiter = "&" if "?" in redirect_uri else "?"
@@ -202,20 +244,24 @@ async def oauth_token(
             pass
 
     if grant_type == "authorization_code":
-        user_id = "default_user"
-        username_val = "claude_user"
-        email_val = "claude@docubrain.local"
+        code_data = OAUTH_CODES.pop(code, None) if code else None
+        if not code_data or code_data["client_id"] != client_id or code_data["redirect_uri"] != redirect_uri:
+            raise HTTPException(status_code=400, detail="Invalid authorization code")
+        if not code_verifier or not code_data.get("code_challenge"):
+            raise HTTPException(status_code=400, detail="PKCE code_verifier is required")
+        expected = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode()).digest()).decode().rstrip("=")
+        if not secrets.compare_digest(expected, code_data["code_challenge"]):
+            raise HTTPException(status_code=400, detail="Invalid PKCE code_verifier")
 
-        if code and code in OAUTH_CODES:
-            code_data = OAUTH_CODES.pop(code)
-            user_id = code_data["user_id"]
-            username_val = code_data["username"]
-            email_val = code_data.get("email", "")
+        user_id = code_data["user_id"]
+        username_val = code_data["username"]
+        email_val = code_data.get("email", "")
 
         access_token = create_access_token(data={
             "sub": user_id,
             "username": username_val,
             "email": email_val
+            , "client_id": client_id, "scope": "mcp:tools"
         })
 
         return {
@@ -267,4 +313,3 @@ async def oauth_token(
             "user_id": "claude_user",
             "username": "claude_user"
         }
-

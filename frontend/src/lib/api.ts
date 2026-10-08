@@ -4,6 +4,9 @@ import {
   ChatResponse,
   HealthResponse,
   EvaluationSummary,
+  SourceCitation,
+  ArtifactType,
+  GenerateArtifactResponse,
 } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
@@ -194,5 +197,102 @@ export async function runEvaluationBenchmark(): Promise<{ message: string; summa
   if (!res.ok) {
     throw new Error('Failed to run benchmark');
   }
+  return res.json();
+}
+
+// External Standalone MCP Server Client API
+export async function fetchExternalMcpServers() {
+  const res = await fetch(`${API_BASE_URL}/v1/mcp/external-servers`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to fetch external MCP servers');
+  return res.json();
+}
+
+export async function testMcpServerConnection(
+  url: string,
+  transport: string = 'sse',
+  authType: string = 'none',
+  authToken: string = ''
+) {
+  const res = await fetch(`${API_BASE_URL}/v1/mcp/external-servers/test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ url, transport, auth_type: authType, auth_token: authToken }),
+  });
+  if (!res.ok) throw new Error('Failed to test MCP server connection');
+  return res.json();
+}
+
+export async function addExternalMcpServer(
+  name: string,
+  url: string,
+  transport: string = 'sse',
+  authType: string = 'none',
+  authToken: string = ''
+) {
+  const res = await fetch(`${API_BASE_URL}/v1/mcp/external-servers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ name, url, transport, auth_type: authType, auth_token: authToken }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Failed to add server' }));
+    throw new Error(err.detail || 'Failed to add external MCP server');
+  }
+  return res.json();
+}
+
+export async function toggleMcpServer(serverId: string, isActive: boolean) {
+  const res = await fetch(`${API_BASE_URL}/v1/mcp/external-servers/${serverId}/toggle`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ is_active: isActive }),
+  });
+  if (!res.ok) throw new Error('Failed to toggle MCP server state');
+  return res.json();
+}
+
+export async function refreshMcpServer(serverId: string) {
+  const res = await fetch(`${API_BASE_URL}/v1/mcp/external-servers/${serverId}/refresh`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to refresh MCP server');
+  return res.json();
+}
+
+export async function deleteMcpServer(serverId: string) {
+  const res = await fetch(`${API_BASE_URL}/v1/mcp/external-servers/${serverId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to delete MCP server');
+  return res.json();
+}
+
+export async function callRemoteMcpTool(serverId: string, toolName: string, args: Record<string, any> = {}) {
+  const res = await fetch(`${API_BASE_URL}/v1/mcp/external-servers/call-tool`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ server_id: serverId, tool_name: toolName, arguments: args }),
+  });
+  if (!res.ok) throw new Error('Failed to execute remote MCP tool');
+  return res.json();
+}
+
+// Chat artifact built by the external MCP server exposing `generate_artifact`
+export async function generateArtifact(
+  question: string,
+  answer: string,
+  sources: SourceCitation[],
+  artifactType: ArtifactType | 'auto' = 'auto'
+): Promise<GenerateArtifactResponse> {
+  const res = await fetch(`${API_BASE_URL}/v1/mcp/artifacts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ question, answer, sources, artifact_type: artifactType }),
+  });
+  if (!res.ok) throw new Error('Failed to generate artifact');
   return res.json();
 }

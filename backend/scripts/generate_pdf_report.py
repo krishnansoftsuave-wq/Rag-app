@@ -6,7 +6,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 def generate_pdf():
-    pdf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "DocuBrain_RAG_Evaluation_Report.pdf")
+    pdf_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "DocuBrain_RAG_Evaluation_Report.pdf")
     doc = SimpleDocTemplate(
         pdf_path,
         pagesize=letter,

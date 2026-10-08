@@ -3,10 +3,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, Sparkles, AlertTriangle, RefreshCw, Swords, Cpu, Layers, Zap } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { ChatMessage, SourceCitation } from '@/types';
+import { ArtifactState, ArtifactType, ChatMessage, SourceCitation } from '@/types';
 import { SourceCard } from './SourceCard';
 import { ComparisonCard } from './ComparisonCard';
-import { sendChatMessage } from '@/lib/api';
+import { ArtifactCard } from './ArtifactCard';
+import { generateArtifact, sendChatMessage } from '@/lib/api';
 
 interface ChatInterfaceProps {
   selectedDocIds: string[];
@@ -36,9 +37,36 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Only follow new messages and the newest answer's artifact, so switching an older artifact's format doesn't jump the view
+  const latestArtifactStatus = messages[messages.length - 1]?.artifact?.status;
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages.length, isLoading, latestArtifactStatus]);
+
+  const setArtifactState = (msgId: string, artifact: ArtifactState) => {
+    setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, artifact } : m)));
+  };
+
+  // Runs after the answer is shown, so artifact generation never delays the chat reply
+  const requestArtifact = async (
+    msgId: string,
+    question: string,
+    answer: string,
+    sources: SourceCitation[],
+    artifactType: ArtifactType | 'auto' = 'auto'
+  ) => {
+    setArtifactState(msgId, { status: 'loading' });
+    try {
+      const res = await generateArtifact(question, answer, sources, artifactType);
+      if (res.success && res.artifact) {
+        setArtifactState(msgId, { status: 'ready', artifact: res.artifact, serverName: res.server_name });
+      } else {
+        setArtifactState(msgId, { status: 'error', error: res.error || 'No artifact returned.' });
+      }
+    } catch (err: any) {
+      setArtifactState(msgId, { status: 'error', error: err.message || 'Artifact request failed.' });
+    }
+  };
 
   const handleSend = async (questionText?: string) => {
     const rawQuery = questionText || inputQuestion;
@@ -64,6 +92,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         sender: 'assistant',
         text: response.answer,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        question: query,
         sources: response.sources,
         used_fallback: response.used_fallback,
         mode: response.mode,
@@ -73,6 +102,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       };
 
       setMessages((prev) => [...prev, botMsg]);
+
+      if (!response.comparison && response.sources?.length > 0) {
+        requestArtifact(botMsg.id, query, response.answer, response.sources);
+      }
     } catch (err: any) {
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -183,6 +216,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
                   {msg.sources && msg.sources.length > 0 && (
                     <SourceCard sources={msg.sources} />
+                  )}
+
+                  {msg.artifact && (
+                    <ArtifactCard
+                      state={msg.artifact}
+                      onRegenerate={(type) =>
+                        requestArtifact(msg.id, msg.question || '', msg.text, msg.sources || [], type)
+                      }
+                    />
                   )}
 
                   <div className="text-[10px] mt-1.5 text-right font-mono text-slate-400">

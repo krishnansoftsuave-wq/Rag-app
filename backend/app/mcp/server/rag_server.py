@@ -5,6 +5,8 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List
 from fastmcp import FastMCP
 
+from app.mcp.server.auth import DocuBrainTokenVerifier
+
 from app.services import (
     hybrid_retriever_service,
     vector_store_service,
@@ -12,11 +14,14 @@ from app.services import (
     extract_text_from_file,
     llm_service
 )
-from app.services.user_service import UserService
+from app.services.users import UserService
 from app.core.config import UPLOAD_DIR
 
 # Initialize FastMCP Server for DocuBrain RAG & MCP Tools
-mcp = FastMCP("DocuBrain-RAG-MCP-Server")
+mcp = FastMCP(
+    "DocuBrain-RAG-MCP-Server",
+    auth=DocuBrainTokenVerifier(required_scopes=["mcp:tools"]),
+)
 
 
 @mcp.tool()

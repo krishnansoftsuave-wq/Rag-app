@@ -22,7 +22,7 @@ from app.services import (
 )
 
 from app.core.security import get_current_user_from_token
-from app.services.user_service import UserService
+from app.services.users import UserService
 
 router = APIRouter()
 

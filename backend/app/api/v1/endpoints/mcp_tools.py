@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, Request, HTTPException, Body
-from typing import Dict, Any, Optional
-from app.mcp.server import (
+from fastapi import APIRouter, Depends, HTTPException, Body
+from typing import Dict, Any
+from app.mcp.server.rag_server import (
     upload_document,
     query_document_and_reply,
     summarize_document,

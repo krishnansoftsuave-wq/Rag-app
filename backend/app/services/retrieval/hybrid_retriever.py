@@ -1,13 +1,13 @@
-import os
 import re
 from typing import List, Dict, Any, Optional
 from sentence_transformers import SentenceTransformer
 from rank_bm25 import BM25Okapi
 
-from app.core.config import EMBEDDING_MODEL_NAME, DEFAULT_TOP_K, GEMINI_API_KEY
+from app.core.config import EMBEDDING_MODEL_NAME, DEFAULT_TOP_K
 from app.core.logger import get_logger
 from app.schemas.chat import SourceCitation
-from app.services.vector_store import VectorStoreService
+from app.services.retrieval.vector_store import VectorStoreService
+from app.services.llm.client import complete
 
 logger = get_logger("hybrid_retriever")
 
@@ -18,65 +18,20 @@ def tokenize(text: str) -> List[str]:
 
 
 def expand_query(query: str, api_key: Optional[str] = None) -> str:
-    """Enriches queries dynamically using LLM (Gemini) by generating domain-specific synonyms and concepts."""
-    key_to_use = api_key or GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", "")
-
-    if key_to_use:
-        prompt = f"""You are an expert search query expander for domain-agnostic document retrieval.
+    """Enriches queries dynamically using the LLM by generating domain-specific synonyms and concepts."""
+    prompt = f"""You are an expert search query expander for domain-agnostic document retrieval.
 Given the user query, generate 3 to 5 domain-specific search synonyms, related technical concepts, or keyword expansions that might appear in relevant target documents.
 Output ONLY the expanded search keywords separated by spaces. Do not include markdown formatting, numbers, quotes, or conversational prefix.
 
 User Query: {query}
 Expanded Terms:"""
-        try:
-            from google import genai
-            client = genai.Client(api_key=key_to_use)
-            candidate_models = [
-                "gemini-3.8-flash",
-                "gemini-3.5-flash",
-                "gemini-3.6-flash",
-                "gemini-flash-latest",
-            ]
-            for model_name in candidate_models:
-                for attempt in range(2):
-                    try:
-                        response = client.models.generate_content(
-                            model=model_name,
-                            contents=prompt
-                        )
-                        if response and response.text:
-                            expanded_terms = response.text.strip().replace("\n", " ")
-                            expanded_terms = re.sub(r'[\*\`\#\"]', '', expanded_terms).strip()
-                            if expanded_terms:
-                                logger.info(f"Dynamic query expansion via LLM ({model_name}): '{query}' -> '{query} {expanded_terms}'")
-                                return f"{query} {expanded_terms}"
-                    except Exception as err:
-                        err_str = str(err)
-                        if ("503" in err_str or "429" in err_str or "RESOURCE_EXHAUSTED" in err_str) and attempt == 0:
-                            import time
-                            time.sleep(2)
-                            continue
-                        logger.warning(f"Gemini expansion candidate model {model_name} failed: {err}")
-                        break
-        except Exception as e:
-            logger.warning(f"Dynamic LLM query expansion failed: {e}. Falling back to static query expansion.")
-
-    return _fallback_expand_query(query)
-
-
-def _fallback_expand_query(query: str) -> str:
-    """Fallback rule-based query expander when LLM API key is absent or unreachable."""
-    expanded = query
-    q_lower = query.lower()
-
-    if "regional failure" in q_lower or "regional outage" in q_lower or "region failure" in q_lower:
-        expanded += " disaster recovery cross-region replication read replicas availability zones"
-    elif "rpo" in q_lower or "rto" in q_lower:
-        expanded += " recovery point objective recovery time objective data loss disaster"
-    elif "session storage" in q_lower or "temporary" in q_lower or "persistent" in q_lower:
-        expanded += " novacache in-memory redis session storage critical business data"
-
-    return expanded
+    # An LLM is required: raises LLMUnavailableError when no model can answer
+    text, model_name = complete(prompt, api_key=api_key)
+    expanded_terms = re.sub(r'[\*\`\#\"]', '', text.strip().replace("\n", " ")).strip()
+    if not expanded_terms:
+        return query
+    logger.info(f"Dynamic query expansion via LLM ({model_name}): '{query}' -> '{query} {expanded_terms}'")
+    return f"{query} {expanded_terms}"
 
 
 class HybridRetrieverService:

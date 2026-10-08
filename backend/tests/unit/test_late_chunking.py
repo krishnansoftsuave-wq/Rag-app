@@ -3,12 +3,11 @@ import os
 import torch
 import numpy as np
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))  # backend/
 
-from app.services.document_processor import chunk_text_with_spans, process_document
-from app.services.late_chunker import late_chunker_service
+from app.services.ingestion.document_processor import chunk_text_with_spans, process_document
+from app.services.ingestion.late_chunker import late_chunker_service
 from app.services import vector_store_service, hybrid_retriever_service
-from app.rag_engine import rag_engine
 
 
 def cosine_similarity(v1, v2):
@@ -99,17 +98,16 @@ def test_late_chunking():
         f.write(context_doc)
 
     chunks = process_document(test_doc_file, test_doc_file, "test_doc_late")
-    rag_engine.add_document_chunks(
-        doc_id="test_doc_late",
-        filename=test_doc_file,
-        chunks=chunks,
-        file_size=len(context_doc),
-        upload_time="2026-09-05 15:00:00",
+    embeddings = late_chunker_service.encode_chunks(
         full_text=context_doc,
+        chunks=chunks,
+        model=hybrid_retriever_service.embedding_model,
         use_late_chunking=True
     )
+    vector_store_service.add_chunks("test_doc_late", test_doc_file, chunks, embeddings, len(context_doc), "2026-09-05 15:00:00")
+    hybrid_retriever_service.build_bm25_index()
 
-    citations = rag_engine.retrieve_context("What capabilities does Antigravity provide?", top_k=2)
+    citations = hybrid_retriever_service.retrieve_context(query="What capabilities does Antigravity provide?", top_k=2)
     print(f"   Retrieved {len(citations)} citations:")
     for c in citations:
         print(f"   - [{int(c.score * 100)}%] {c.content}")
@@ -117,7 +115,8 @@ def test_late_chunking():
     # Cleanup
     if os.path.exists(test_doc_file):
         os.remove(test_doc_file)
-    rag_engine.delete_document("test_doc_late")
+    vector_store_service.delete_document("test_doc_late")
+    hybrid_retriever_service.build_bm25_index()
     print("   [PASS] End-to-end indexing and retrieval passed cleanly.")
 
     print("\n=== ALL LATE CHUNKING TESTS PASSED SUCCESSFULLY! ===")

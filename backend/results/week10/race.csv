@@ -1,0 +1,11 @@
+system,question_id,category,repeat,quality,correctness,completeness,groundedness,passed,keyword_score,keyword_passed,latency_ms,active_latency_ms,wait_ms,llm_calls,input_tokens,cached_input_tokens,output_tokens,total_tokens,cost_usd,handoff_tokens_approx,termination_reason,fell_back,failed_attempts,failed_answer,failure,error,judge_error
+single,W04,reasoning,1,1.0,1,1,1,False,0.0,False,6469.5,2574.5,3895.0,2,699,0,533,1232,0.0004247,,error,False,3,True,"Groq is unavailable (last error: openai/gpt-oss-120b: BadRequestError: Error code: 400 - {'error': {'message': 'Model called python tool which was not enabled for this request', 'type': 'invalid_request_error', 'co).",,
+team,W04,reasoning,1,5.0,5,5,5,True,0.8,True,5288.7,5288.7,0.0,5,2373,0,1161,3534,0.0010525,139,completed,False,,,,,
+single,W05,explain,1,4.0,5,5,2,False,0.81,True,17514.1,5242.6,12271.5,5,3964,256,1370,5334,0.0013974,,completed,False,0,,,,
+team,W05,explain,1,3.667,4,5,2,False,0.76,True,19992.0,11249.5,8742.5,9,7068,0,3199,10267,0.0029796,540,completed,False,0,,,,
+single,W12,single_fact,1,5.0,5,5,5,True,1.0,True,3913.5,3913.5,0.0,5,3893,0,763,4656,0.0010417,,completed,False,,,,,
+team,W12,single_fact,1,5.0,5,5,5,True,1.0,True,4429.7,4429.7,0.0,5,2172,256,747,2919,0.0007548,61,completed,False,,,,,
+single,W22,multi_part,1,4.667,5,5,4,True,0.73,True,16867.2,6867.2,10000.0,7,7383,256,1448,8831,0.0019571,,completed,False,,,,,
+team,W22,multi_part,1,5.0,5,5,5,True,0.86,True,6551.4,6551.4,0.0,8,3966,0,2338,6304,0.0019977,248,completed,False,,,,,
+single,W23,not_in_docs,1,1.0,1,1,1,False,0.0,False,51182.7,7503.2,43679.5,8,7638,1024,1242,8880,0.0018141,,error,False,3,True,"Groq is unavailable (last error: openai/gpt-oss-120b: BadRequestError: Error code: 400 - {'error': {'message': ""Parsing failed. The model generated output that could not be parsed. Please adjust your prompt. See 'f).",,
+team,W23,not_in_docs,1,5.0,5,5,5,True,0.4,False,21141.6,6679.1,14462.5,9,7226,0,1474,8700,0.0019683,73,completed,False,0,,,,

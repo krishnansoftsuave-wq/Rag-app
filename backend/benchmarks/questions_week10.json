@@ -1,0 +1,146 @@
+[
+  {
+    "id": "W01", "category": "single_fact", "origin": "novacloud Q1", "evidence_pages": [1],
+    "question": "When was NovaTech Systems founded?",
+    "asks": ["the founding year"],
+    "expected_answer": "NovaTech Systems was founded in 2018."
+  },
+  {
+    "id": "W02", "category": "explain", "origin": "novacloud Q2", "evidence_pages": [9],
+    "question": "What is the difference between RPO and RTO?",
+    "asks": ["what RPO means", "what RTO means"],
+    "expected_answer": "RPO (Recovery Point Objective) is the maximum acceptable amount of data loss measured in time, while RTO (Recovery Time Objective) is the maximum acceptable time required to restore service."
+  },
+  {
+    "id": "W03", "category": "multi_part", "origin": "novacloud Q3", "evidence_pages": [10],
+    "question": "Which services did Acme Retail use to store product images and frequently accessed product data, and why?",
+    "asks": ["the service for product images and why", "the service for frequently accessed product data and why"],
+    "expected_answer": "Acme used NovaObject for product images because images are large binary objects rather than relational records, and NovaCache for frequently accessed product data because that data can be regenerated from NovaSQL if the cache is lost."
+  },
+  {
+    "id": "W04", "category": "reasoning", "origin": "novacloud Q4", "evidence_pages": [8],
+    "question": "What would be the monthly storage cost for 500 GB of NovaObject Standard storage, excluding other charges?",
+    "asks": ["the Standard storage price per GB per month", "the monthly cost for 500 GB"],
+    "expected_answer": "NovaObject Standard storage costs $0.023 per GB per month, so 500 GB costs 500 x $0.023 = $11.50 per month."
+  },
+  {
+    "id": "W05", "category": "explain", "origin": "novacloud Q5", "evidence_pages": [3, 10],
+    "question": "How does NovaSQL differ from NovaDocument?",
+    "asks": ["NovaSQL's data model and compatibility", "NovaDocument's data model and compatibility", "the key functional difference"],
+    "expected_answer": "NovaSQL is a managed PostgreSQL-compatible relational database intended for transactions and relational queries. NovaDocument is a managed MongoDB-compatible document database for flexible JSON-like documents; it distributes documents across storage nodes and does not provide relational joins."
+  },
+  {
+    "id": "W06", "category": "multi_part", "origin": "novacloud Q6", "evidence_pages": [6],
+    "question": "What happens to a NovaLoad backend after three consecutive failed health checks, and what is required for it to return to active traffic?",
+    "asks": ["what happens after three failed health checks", "what is required to return to active traffic"],
+    "expected_answer": "After three consecutive failed health checks NovaLoad removes the backend from active rotation. Once it passes two consecutive health checks it can return to active traffic. Health checks run every 10 seconds by default."
+  },
+  {
+    "id": "W07", "category": "single_fact", "origin": "novacloud Q7", "evidence_pages": [2],
+    "question": "Does NovaFunction support executions longer than 15 minutes?",
+    "asks": ["yes or no, with the maximum execution time"],
+    "expected_answer": "No. The maximum execution time for a NovaFunction is 15 minutes."
+  },
+  {
+    "id": "W08", "category": "reasoning", "origin": "novacloud Q8", "evidence_pages": [9],
+    "question": "If an application needs data to remain available after a regional failure, which NovaCloud capabilities could help?",
+    "asks": ["cross-region replication options", "availability zones", "NovaSQL cross-region read replicas and their limitation"],
+    "expected_answer": "Cross-region replication helps: NovaObject supports asynchronous cross-region replication and NovaDocument also supports cross-region replication. Workloads can be distributed across availability zones (at least two recommended for production). NovaSQL supports cross-region read replicas, but a read replica is not automatically promoted during a regional outage; Enterprise customers can also replicate NovaSQL backups to another region."
+  },
+  {
+    "id": "W09", "category": "single_fact", "origin": "novacloud Q9", "evidence_pages": [1],
+    "question": "When were Europe Central and Asia Pacific introduced?",
+    "asks": ["the year Europe Central was introduced", "the year Asia Pacific was introduced"],
+    "expected_answer": "Europe Central was introduced in 2021 and Asia Pacific became available in 2023."
+  },
+  {
+    "id": "W10", "category": "reasoning", "origin": "novacloud Q10", "evidence_pages": [3],
+    "question": "A developer needs temporary high-speed session storage that should not be the only persistent copy of critical data. Which service should they use?",
+    "asks": ["which service", "why it fits, including its persistence caveat"],
+    "expected_answer": "NovaCache. It is a managed Redis-compatible in-memory cache that supports session storage, but because its data is stored in memory it should not be the only persistent storage for critical business data."
+  },
+  {
+    "id": "W11", "category": "single_fact", "origin": "novacloud Q11", "evidence_pages": [8],
+    "question": "How many default NovaCloud account resource limits are listed in the pricing section?",
+    "asks": ["how many limits", "which limits with their values"],
+    "expected_answer": "Six default limits: NovaVM instances 100, NovaCluster 20, NovaVPC 50, NovaObject buckets 100, NovaAPI requests per second 1,000, and NovaQueue queues 200."
+  },
+  {
+    "id": "W12", "category": "single_fact", "origin": "novacloud Q12", "evidence_pages": [4],
+    "question": "What is the default NovaQueue visibility timeout?",
+    "asks": ["the default visibility timeout"],
+    "expected_answer": "The default NovaQueue visibility timeout is 30 seconds."
+  },
+  {
+    "id": "W13", "category": "explain", "origin": "novacloud Q14", "evidence_pages": [3, 10],
+    "question": "Why would Acme Retail use NovaCache instead of NovaSQL for frequently accessed product information?",
+    "asks": ["what NovaCache offers for this", "why losing the cache is acceptable"],
+    "expected_answer": "NovaCache is an in-memory Redis-compatible cache designed for fast access to frequently read data, and the cached product data can be regenerated from NovaSQL if the cache is lost."
+  },
+  {
+    "id": "W14", "category": "single_fact", "origin": "novacloud Q16", "evidence_pages": [1],
+    "question": "What are the five major NovaCloud product areas?",
+    "asks": ["the five product areas"],
+    "expected_answer": "Compute Services, Data Services, Application Services, Security Services, and Observability Services."
+  },
+  {
+    "id": "W15", "category": "single_fact", "origin": "novacloud Q18", "evidence_pages": [9],
+    "question": "Does NovaCloud automatically guarantee an RPO of 15 minutes for all applications?",
+    "asks": ["yes or no, with what the documentation says about guarantees"],
+    "expected_answer": "No. NovaCloud does not automatically guarantee a specific RPO or RTO for every service; customers must choose backup and replication configurations that meet their requirements. A 15-minute RPO is only an example in the documentation."
+  },
+  {
+    "id": "W16", "category": "multi_part", "origin": "novacloud Q19", "evidence_pages": [7],
+    "question": "What observability tools are available, what does each collect, and how long is the data retained?",
+    "asks": ["the three tools", "what each collects", "each tool's retention"],
+    "expected_answer": "NovaMetrics collects numerical measurements (CPU, memory, request count, latency) and stores them for 15 months. NovaLogs collects application and infrastructure logs, retained 30 days by default and up to two years for Enterprise customers. NovaTrace collects distributed traces (end-to-end requests made of spans), retained for 30 days."
+  },
+  {
+    "id": "W17", "category": "reasoning", "origin": "novacloud Q20", "evidence_pages": [10],
+    "question": "Acme needs load balancing, automatic scaling, transactional data, caching, file storage, and monitoring. Which services should it use?",
+    "asks": ["load balancing", "automatic scaling", "transactional data", "caching", "file storage", "monitoring"],
+    "expected_answer": "NovaLoad for load balancing, NovaCluster for automatic scaling, NovaSQL for transactional data, NovaCache for caching, NovaObject for file storage, and NovaMetrics for monitoring."
+  },
+  {
+    "id": "W18", "category": "multi_part", "origin": "new", "evidence_pages": [4],
+    "question": "How does NovaQueue's visibility timeout work, what is its default value, and how long can a queue retain messages?",
+    "asks": ["how the visibility timeout works", "the default visibility timeout", "the maximum message retention"],
+    "expected_answer": "When a consumer receives a message, the message becomes temporarily invisible to other consumers; if the consumer does not acknowledge it before the visibility timeout expires, the message becomes available again. The default visibility timeout is 30 seconds, and a queue can retain messages for up to 14 days. Messages that repeatedly fail processing can be moved to a dead-letter queue."
+  },
+  {
+    "id": "W19", "category": "multi_part", "origin": "new", "evidence_pages": [2],
+    "question": "Explain how the NovaCluster autoscaler decides to add or remove nodes, and give the maximum number of worker nodes per cluster and the allowed size of a node pool.",
+    "asks": ["when the autoscaler adds nodes", "when it removes nodes", "the maximum worker nodes per cluster", "the node pool size range"],
+    "expected_answer": "The autoscaler adds nodes when workloads cannot be scheduled because of insufficient resources, and removes nodes when they remain underutilized for a sustained period. A cluster can contain up to 500 worker nodes, and each node pool can contain between 1 and 100 nodes."
+  },
+  {
+    "id": "W20", "category": "multi_part", "origin": "new", "evidence_pages": [3, 9, 10],
+    "question": "How do NovaSQL backups and point-in-time recovery work, how often are backups taken, and what backup retention did Acme Retail configure?",
+    "asks": ["how point-in-time recovery works", "the backup frequency", "the configurable retention range", "Acme Retail's retention"],
+    "expected_answer": "NovaSQL takes automatic backups every six hours, with retention configurable between 7 and 35 days. Point-in-time recovery restores a database to any supported timestamp within the configured retention period. Enterprise customers can also replicate backups to another region. Acme Retail enabled NovaSQL backups with a 21-day retention period."
+  },
+  {
+    "id": "W21", "category": "multi_part", "origin": "new", "evidence_pages": [5],
+    "question": "How does NovaCloud's role-based access control work, what can each default role do, and how long are audit logs retained by default and for Enterprise customers?",
+    "asks": ["the RBAC model and custom roles", "what Viewer, Developer and Administrator can do", "default audit log retention", "Enterprise audit log retention"],
+    "expected_answer": "NovaCloud uses role-based access control with three default roles: Viewer can view resources and configuration but cannot modify them; Developer can create and modify application resources but cannot change organization-level security settings; Administrator has full access to the organization. Organizations can create custom roles with more granular permissions. Audit logs are retained for 90 days by default, and Enterprise customers can increase retention to up to seven years."
+  },
+  {
+    "id": "W22", "category": "multi_part", "origin": "new", "evidence_pages": [3, 8],
+    "question": "Explain the difference between NovaObject's three storage classes and give the monthly price per GB of each.",
+    "asks": ["what each storage class is for", "the Standard price", "the Infrequent Access price", "the Archive price"],
+    "expected_answer": "Standard is designed for frequently accessed data and costs $0.023 per GB per month. Infrequent Access has lower storage costs but higher retrieval charges, at $0.012 per GB per month. Archive has the lowest storage cost, is meant for rarely accessed data, and costs $0.004 per GB per month; retrieving data from Archive may incur additional charges."
+  },
+  {
+    "id": "W23", "category": "not_in_docs", "origin": "new", "evidence_pages": [2, 8],
+    "question": "What is the maximum amount of memory that can be allocated to a NovaFunction?",
+    "asks": ["the maximum memory allocation, or that the documentation does not state it"],
+    "expected_answer": "The documentation does not state a maximum memory allocation for NovaFunction. It only says NovaFunction is billed on execution duration and allocated memory, and that the maximum execution time is 15 minutes."
+  },
+  {
+    "id": "W24", "category": "not_in_docs", "origin": "new", "evidence_pages": [9],
+    "question": "What uptime percentage does NovaCloud guarantee for NovaSQL in its SLA?",
+    "asks": ["the uptime percentage, or that the documentation does not state it"],
+    "expected_answer": "The documentation does not specify an uptime SLA percentage for NovaSQL or any other service. It only says NovaCloud does not automatically guarantee a specific RPO or RTO for every service."
+  }
+]

@@ -1,0 +1,340 @@
+{
+  "generated_at": "2026-10-09T15:43:23",
+  "setup": {
+    "doc_id": "w10_novacloud",
+    "contestant_model": "openai/gpt-oss-120b",
+    "judge_model": "qwen/qwen3.8-27b",
+    "systems": [
+      "single",
+      "team"
+    ],
+    "budgets": {
+      "max_iterations": 12,
+      "max_tokens": 40000,
+      "max_cost": 0.05,
+      "max_wall_clock_seconds": 600.0
+    }
+  },
+  "coverage": {
+    "paired_runs_per_system": 5,
+    "questions_covered": 5,
+    "repeats_covered": [
+      1
+    ],
+    "errored_runs": 0,
+    "unjudged_runs": 0
+  },
+  "systems": {
+    "single": {
+      "runs": 5,
+      "quality": 3.1334,
+      "correctness": 3.4,
+      "completeness": 3.4,
+      "groundedness": 2.6,
+      "pass_rate": 40.0,
+      "keyword_pass_rate": 60.0,
+      "latency_p50_ms": 5242.6,
+      "latency_p95_ms": 7376.0,
+      "latency_p50_with_waits_ms": 16867.2,
+      "input_tokens": 4715.4,
+      "output_tokens": 1071.2,
+      "total_tokens": 5786.6,
+      "llm_calls": 5.4,
+      "cost_per_question": 0.001327,
+      "cost_per_1k_questions": 1.327,
+      "quality_by_repeat": [
+        3.133
+      ],
+      "quality_noise": null,
+      "fell_back_runs": 0,
+      "failed_attempts": 6,
+      "failed_answers": 2,
+      "budget_stops": 0
+    },
+    "team": {
+      "runs": 5,
+      "quality": 4.7334,
+      "correctness": 4.8,
+      "completeness": 5.0,
+      "groundedness": 4.4,
+      "pass_rate": 80.0,
+      "keyword_pass_rate": 80.0,
+      "latency_p50_ms": 6551.4,
+      "latency_p95_ms": 10335.4,
+      "latency_p50_with_waits_ms": 6551.4,
+      "input_tokens": 4561.0,
+      "output_tokens": 1783.8,
+      "total_tokens": 6344.8,
+      "llm_calls": 7.2,
+      "cost_per_question": 0.0017506,
+      "cost_per_1k_questions": 1.7506,
+      "quality_by_repeat": [
+        4.733
+      ],
+      "quality_noise": null,
+      "fell_back_runs": 0,
+      "failed_attempts": 0,
+      "failed_answers": 0,
+      "budget_stops": 0
+    }
+  },
+  "both_answered": {
+    "single": {
+      "runs": 3,
+      "quality": 4.5557,
+      "correctness": 5.0,
+      "completeness": 5.0,
+      "groundedness": 3.6667,
+      "pass_rate": 66.7,
+      "keyword_pass_rate": 100.0,
+      "latency_p50_ms": 5242.6,
+      "latency_p95_ms": 6704.7,
+      "latency_p50_with_waits_ms": 16867.2,
+      "input_tokens": 5080.0,
+      "output_tokens": 1193.6667,
+      "total_tokens": 6273.6667,
+      "llm_calls": 5.6667,
+      "cost_per_question": 0.0014654,
+      "cost_per_1k_questions": 1.4654,
+      "quality_by_repeat": [
+        4.556
+      ],
+      "quality_noise": null,
+      "fell_back_runs": 0,
+      "failed_attempts": 0,
+      "failed_answers": 0,
+      "budget_stops": 0
+    },
+    "team": {
+      "runs": 3,
+      "quality": 4.5557,
+      "correctness": 4.6667,
+      "completeness": 5.0,
+      "groundedness": 4.0,
+      "pass_rate": 66.7,
+      "keyword_pass_rate": 100.0,
+      "latency_p50_ms": 6551.4,
+      "latency_p95_ms": 10779.7,
+      "latency_p50_with_waits_ms": 6551.4,
+      "input_tokens": 4402.0,
+      "output_tokens": 2094.6667,
+      "total_tokens": 6496.6667,
+      "llm_calls": 7.3333,
+      "cost_per_question": 0.0019107,
+      "cost_per_1k_questions": 1.9107,
+      "quality_by_repeat": [
+        4.556
+      ],
+      "quality_noise": null,
+      "fell_back_runs": 0,
+      "failed_attempts": 0,
+      "failed_answers": 0,
+      "budget_stops": 0
+    }
+  },
+  "by_category": {
+    "explain": {
+      "single": {
+        "runs": 1,
+        "quality": 4.0,
+        "pass_rate": 0.0,
+        "latency_p50_ms": 5242.6,
+        "total_tokens": 5334.0,
+        "llm_calls": 5.0,
+        "cost_per_question": 0.0013974
+      },
+      "team": {
+        "runs": 1,
+        "quality": 3.667,
+        "pass_rate": 0.0,
+        "latency_p50_ms": 11249.5,
+        "total_tokens": 10267.0,
+        "llm_calls": 9.0,
+        "cost_per_question": 0.0029796
+      }
+    },
+    "multi_part": {
+      "single": {
+        "runs": 1,
+        "quality": 4.667,
+        "pass_rate": 100.0,
+        "latency_p50_ms": 6867.2,
+        "total_tokens": 8831.0,
+        "llm_calls": 7.0,
+        "cost_per_question": 0.0019571
+      },
+      "team": {
+        "runs": 1,
+        "quality": 5.0,
+        "pass_rate": 100.0,
+        "latency_p50_ms": 6551.4,
+        "total_tokens": 6304.0,
+        "llm_calls": 8.0,
+        "cost_per_question": 0.0019977
+      }
+    },
+    "not_in_docs": {
+      "single": {
+        "runs": 1,
+        "quality": 1.0,
+        "pass_rate": 0.0,
+        "latency_p50_ms": 7503.2,
+        "total_tokens": 8880.0,
+        "llm_calls": 8.0,
+        "cost_per_question": 0.0018141
+      },
+      "team": {
+        "runs": 1,
+        "quality": 5.0,
+        "pass_rate": 100.0,
+        "latency_p50_ms": 6679.1,
+        "total_tokens": 8700.0,
+        "llm_calls": 9.0,
+        "cost_per_question": 0.0019683
+      }
+    },
+    "reasoning": {
+      "single": {
+        "runs": 1,
+        "quality": 1.0,
+        "pass_rate": 0.0,
+        "latency_p50_ms": 2574.5,
+        "total_tokens": 1232.0,
+        "llm_calls": 2.0,
+        "cost_per_question": 0.0004247
+      },
+      "team": {
+        "runs": 1,
+        "quality": 5.0,
+        "pass_rate": 100.0,
+        "latency_p50_ms": 5288.7,
+        "total_tokens": 3534.0,
+        "llm_calls": 5.0,
+        "cost_per_question": 0.0010525
+      }
+    },
+    "single_fact": {
+      "single": {
+        "runs": 1,
+        "quality": 5.0,
+        "pass_rate": 100.0,
+        "latency_p50_ms": 3913.5,
+        "total_tokens": 4656.0,
+        "llm_calls": 5.0,
+        "cost_per_question": 0.0010417
+      },
+      "team": {
+        "runs": 1,
+        "quality": 5.0,
+        "pass_rate": 100.0,
+        "latency_p50_ms": 4429.7,
+        "total_tokens": 2919.0,
+        "llm_calls": 5.0,
+        "cost_per_question": 0.0007548
+      }
+    }
+  },
+  "roles": {
+    "team": {
+      "manager.plan": {
+        "calls": 1.0,
+        "input_tokens": 375.0,
+        "output_tokens": 208.0,
+        "cost": 0.000181
+      },
+      "concepts": {
+        "calls": 2.0,
+        "input_tokens": 1543.0,
+        "output_tokens": 562.4,
+        "cost": 0.0005689
+      },
+      "reference": {
+        "calls": 3.2,
+        "input_tokens": 2323.4,
+        "output_tokens": 636.0,
+        "cost": 0.0007263
+      },
+      "manager.synthesize": {
+        "calls": 1.0,
+        "input_tokens": 319.6,
+        "output_tokens": 377.4,
+        "cost": 0.0002744
+      }
+    }
+  },
+  "handoff_tokens_approx": {
+    "team": 212.2
+  },
+  "per_question": [
+    {
+      "question_id": "W04",
+      "category": "reasoning",
+      "single": 1.0,
+      "team": 5.0
+    },
+    {
+      "question_id": "W05",
+      "category": "explain",
+      "single": 4.0,
+      "team": 3.667
+    },
+    {
+      "question_id": "W12",
+      "category": "single_fact",
+      "single": 5.0,
+      "team": 5.0
+    },
+    {
+      "question_id": "W22",
+      "category": "multi_part",
+      "single": 4.667,
+      "team": 5.0
+    },
+    {
+      "question_id": "W23",
+      "category": "not_in_docs",
+      "single": 1.0,
+      "team": 5.0
+    }
+  ],
+  "comparison": {
+    "quality_delta": 1.6,
+    "pass_rate_delta_pp": 40.0,
+    "token_ratio": 1.096,
+    "input_token_ratio": 0.967,
+    "llm_call_ratio": 1.333,
+    "cost_ratio": 1.319,
+    "latency_p50_ratio": 1.25,
+    "per_question_wins": {
+      "team": 2,
+      "tie": 3,
+      "single": 0
+    },
+    "categories_where_team_wins": [
+      "multi_part",
+      "not_in_docs",
+      "reasoning"
+    ]
+  },
+  "verdict": {
+    "keep": "team",
+    "rule": "Keep the team only if its judge quality beats the single agent by at least max(0.3, run-to-run noise = 0.0) AND it costs at most 2.0x AND its p50 latency is at most 2.0x the single agent's.",
+    "checks": {
+      "quality_gain": {
+        "value": 1.6,
+        "needed": ">= 0.3",
+        "ok": true
+      },
+      "cost_ratio": {
+        "value": 1.319,
+        "needed": "<= 2.0",
+        "ok": true
+      },
+      "latency_ratio": {
+        "value": 1.25,
+        "needed": "<= 2.0",
+        "ok": true
+      }
+    }
+  }
+}

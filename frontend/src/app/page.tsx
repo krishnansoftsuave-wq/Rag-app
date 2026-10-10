@@ -8,7 +8,9 @@ import { AuthModal } from '@/components/AuthModal';
 import McpServerManagerModal from '@/components/McpServerManagerModal';
 import { fetchHealth, fetchDocuments, deleteDocument, fetchCurrentUser, removeAuthToken, sendChatMessage } from '@/lib/api';
 import { useChatSessions, newId } from '@/lib/chatSessions';
-import { ChatAttachment, DocumentMetadata } from '@/types';
+import { AnswerMode, ChatAttachment, DocumentMetadata } from '@/types';
+
+const ANSWER_MODE_KEY = 'docubrain_answer_mode';
 
 const timeNow = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 const chatTitle = (question: string) => (question.length > 48 ? `${question.slice(0, 47).trimEnd()}…` : question);
@@ -25,11 +27,27 @@ export default function Home() {
   const [isLibraryOpen, setIsLibraryOpen] = useState<boolean>(false);
   const [activeChatId, setActiveChatId] = useState<string | null>(null); // null: a new, empty chat
   const [pendingChatIds, setPendingChatIds] = useState<Set<string>>(new Set());
+  const [answerMode, setAnswerMode] = useState<AnswerMode>('agent'); // who answers: the single agent or the team
 
   const { chats, createChat, appendMessage, removeMessage, deleteChat } = useChatSessions(
     currentUser?.id || currentUser?.user_id || 'guest'
   );
   const activeChat = chats.find((c) => c.id === activeChatId) || null;
+
+  // Keep the Single / Team choice across visits
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(ANSWER_MODE_KEY);
+      if (saved === 'agent' || saved === 'team') setAnswerMode(saved);
+    } catch (e) {}
+  }, []);
+
+  const changeAnswerMode = (mode: AnswerMode) => {
+    setAnswerMode(mode);
+    try {
+      localStorage.setItem(ANSWER_MODE_KEY, mode);
+    } catch (e) {}
+  };
 
   // Load Current User session on mount
   useEffect(() => {
@@ -96,11 +114,18 @@ export default function Home() {
     loadData();
   };
 
-  // Ask the agent and add its answer (or the error) to the chat the question was asked in
-  const runQuestion = async (chatId: string, question: string, attachment?: ChatAttachment) => {
+  // Ask the single agent or the team and add its answer (or the error) to the chat the question was asked in
+  const runQuestion = async (chatId: string, question: string, mode: AnswerMode, attachment?: ChatAttachment) => {
     setPendingChatIds((prev) => new Set(prev).add(chatId));
     try {
-      const response = await sendChatMessage(question, attachment ? [attachment.doc_id] : undefined, 'agent');
+      const response = await sendChatMessage(question, attachment ? [attachment.doc_id] : undefined, mode);
+      // A backend from before the team mode existed answers an unknown mode with its default comparison
+      if (response.mode !== mode) {
+        throw new Error(
+          `Asked the ${mode === 'team' ? 'team' : 'single agent'}, but the backend answered in "${response.mode}" mode. ` +
+            'Restart the backend so it loads the latest code, then try again.'
+        );
+      }
       appendMessage(chatId, {
         id: newId('msg'),
         sender: 'assistant',
@@ -110,6 +135,7 @@ export default function Home() {
         used_fallback: response.used_fallback,
         mode: response.mode,
         agent_result: response.agent_result,
+        team_result: response.team_result,
         workflow_result: response.workflow_result,
         comparison: response.comparison,
         mcp_results: response.mcp_results,
@@ -139,8 +165,8 @@ export default function Home() {
       chatId = createChat(chatTitle(question));
       setActiveChatId(chatId);
     }
-    appendMessage(chatId, { id: newId('msg'), sender: 'user', text: question, timestamp: timeNow(), attachment });
-    runQuestion(chatId, question, attachment);
+    appendMessage(chatId, { id: newId('msg'), sender: 'user', text: question, timestamp: timeNow(), attachment, mode: answerMode });
+    runQuestion(chatId, question, answerMode, attachment);
   };
 
   // Replace a failed answer with a new attempt at the question before it
@@ -150,7 +176,8 @@ export default function Home() {
     const question = activeChat.messages.slice(0, index).reverse().find((m) => m.sender === 'user');
     if (!question) return;
     removeMessage(activeChat.id, messageId);
-    runQuestion(activeChat.id, question.text, question.attachment);
+    // Ask again the way it was asked (questions from before the switch existed went to the single agent)
+    runQuestion(activeChat.id, question.text, question.mode === 'team' ? 'team' : 'agent', question.attachment);
   };
 
   const openChat = useCallback((chatId: string | null) => {
@@ -252,6 +279,8 @@ export default function Home() {
           onLibraryOpenChange={setIsLibraryOpen}
           onSend={handleSend}
           onRetry={handleRetry}
+          answerMode={answerMode}
+          onAnswerModeChange={changeAnswerMode}
         />
       </main>
 

@@ -9,6 +9,10 @@ LLM_PROVIDER picks the backend (defaults to "groq" when GROQ_API_KEY is set, oth
 Every request has a timeout and no hidden SDK retries; calls fall back across the provider's models.
 A model that is rate-limited, overloaded, missing or slow is put on a cooldown per key, so later calls
 skip it instead of failing on it again.
+
+Token usage: inside `with track_usage() as meter:` every successful call records the token counts the provider
+reports (not an estimate), the model that answered and the label set with usage_label(). Meters nest, and the
+specialist threads of the agent team copy the caller's context, so their calls land in the same meter.
 """
 import os
 import re
@@ -17,12 +21,16 @@ import time
 import typing
 import inspect
 import hashlib
+import threading
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 from app.core.config import GEMINI_API_KEY, GROQ_API_KEY
 from app.core.logger import get_logger
+from app.services.llm.pricing import call_cost
 
 logger = get_logger("llm_client")
 
@@ -60,9 +68,13 @@ _ERROR_RULES = [
     ("API key not valid", 0, "invalid API key"),
     ("401", 0, "invalid API key (401)"),
 ]
-_RETRY_HINT = re.compile(r"(?:try again|retry) in\s+(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:([\d.]+)s)?", re.IGNORECASE)
+# "try again in 7m15.3s", "1h2m", "9s", "105ms": duration parts read as (number, unit), "ms" before "m"
+_RETRY_HINT = re.compile(r"(?:try again|retry) in\s+((?:[\d.]+(?:ms|h|m|s)\s*)+)", re.IGNORECASE)
+_DURATION_PART = re.compile(r"([\d.]+)(ms|h|m|s)", re.IGNORECASE)
+_UNIT_SECONDS = {"h": 3600.0, "m": 60.0, "s": 1.0, "ms": 0.001}
 _MAX_COOLDOWN_SECONDS = 24 * 3600
 MAX_COOLDOWN_WAIT_SECONDS = 20  # wait for a model this close to leaving cooldown instead of failing
+RATE_LIMIT_RETRIES = 1  # how many times one call waits for a cooldown before failing
 
 _cooldown_until: Dict[str, float] = {}
 _last_failure: Dict[str, str] = {}
@@ -72,6 +84,134 @@ logger.info(f"LLM provider: {PROVIDER_LABEL} (models: {', '.join(MODELS.get(PROV
 
 class LLMUnavailableError(RuntimeError):
     """No model of the configured provider could serve the request."""
+
+
+def set_models(models: List[str]) -> None:
+    """Pin the configured provider to these models (in order), e.g. one model for a fair benchmark race."""
+    MODELS[PROVIDER] = list(models)
+
+
+# ---------------------------------------------------------------------------
+# Usage metering
+# ---------------------------------------------------------------------------
+
+@dataclass
+class LLMCallUsage:
+    label: str
+    model: str
+    input_tokens: int
+    cached_input_tokens: int
+    output_tokens: int
+
+
+class UsageMeter:
+    """Provider-reported usage of the LLM calls made while this meter is active, plus time spent waiting
+    for rate limits. Thread-safe: parallel specialists add to the same meter."""
+
+    def __init__(self):
+        self.calls: List[LLMCallUsage] = []
+        self.wait_seconds = 0.0
+        self._lock = threading.Lock()
+
+    def add(self, call: LLMCallUsage) -> None:
+        with self._lock:
+            self.calls.append(call)
+
+    def add_wait(self, seconds: float) -> None:
+        with self._lock:
+            self.wait_seconds += seconds
+
+    @property
+    def input_tokens(self) -> int:
+        return sum(c.input_tokens for c in self.calls)
+
+    @property
+    def cached_input_tokens(self) -> int:
+        return sum(c.cached_input_tokens for c in self.calls)
+
+    @property
+    def output_tokens(self) -> int:
+        return sum(c.output_tokens for c in self.calls)
+
+    @property
+    def total_tokens(self) -> int:
+        return self.input_tokens + self.output_tokens
+
+    @property
+    def models(self) -> List[str]:
+        return sorted({c.model for c in self.calls})
+
+    @property
+    def unpriced_models(self) -> List[str]:
+        return sorted({c.model for c in self.calls if call_cost(c.model, 0, 0, 0) is None})
+
+    @property
+    def cost(self) -> float:
+        """USD for the priced calls; see unpriced_models for calls that could not be priced."""
+        return sum(call_cost(c.model, c.input_tokens, c.cached_input_tokens, c.output_tokens) or 0.0 for c in self.calls)
+
+    def by_label(self) -> Dict[str, Dict[str, Any]]:
+        """Calls, tokens and cost per label (e.g. per agent of a team)."""
+        out: Dict[str, Dict[str, Any]] = {}
+        for c in self.calls:
+            row = out.setdefault(c.label or "unlabelled", {"calls": 0, "input_tokens": 0, "output_tokens": 0, "cost": 0.0})
+            row["calls"] += 1
+            row["input_tokens"] += c.input_tokens
+            row["output_tokens"] += c.output_tokens
+            row["cost"] += call_cost(c.model, c.input_tokens, c.cached_input_tokens, c.output_tokens) or 0.0
+        return out
+
+
+_meters: ContextVar[Tuple[UsageMeter, ...]] = ContextVar("llm_usage_meters", default=())
+_label: ContextVar[str] = ContextVar("llm_usage_label", default="")
+
+
+@contextmanager
+def track_usage() -> Iterator[UsageMeter]:
+    """Record every LLM call made in this context (and in threads started with a copy of it)."""
+    meter = UsageMeter()
+    token = _meters.set(_meters.get() + (meter,))
+    try:
+        yield meter
+    finally:
+        _meters.reset(token)
+
+
+@contextmanager
+def usage_label(label: str) -> Iterator[None]:
+    """Tag the LLM calls made in this context, e.g. with the name of the agent making them."""
+    token = _label.set(label)
+    try:
+        yield
+    finally:
+        _label.reset(token)
+
+
+def _usage_counts(response: Any) -> Tuple[int, int, int]:
+    """(input, cached input, output) tokens as reported by the provider; output includes reasoning tokens."""
+    if PROVIDER == "groq":
+        usage = getattr(response, "usage", None)
+        if not usage:
+            return 0, 0, 0
+        details = getattr(usage, "prompt_tokens_details", None)
+        cached = (getattr(details, "cached_tokens", 0) or 0) if details else 0
+        return usage.prompt_tokens or 0, cached, usage.completion_tokens or 0
+    usage = getattr(response, "usage_metadata", None)
+    if not usage:
+        return 0, 0, 0
+    output = (usage.candidates_token_count or 0) + (getattr(usage, "thoughts_token_count", 0) or 0)
+    return usage.prompt_token_count or 0, usage.cached_content_token_count or 0, output
+
+
+def _metered(model: str, response: Any) -> Any:
+    """Record a successful response's usage in every active meter; returns the response unchanged."""
+    meters = _meters.get()
+    if meters:
+        inp, cached, out = _usage_counts(response)
+        call = LLMCallUsage(_label.get(), model, inp, cached, out)
+        for meter in meters:
+            meter.add(call)
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -102,10 +242,18 @@ def _client(key: str) -> Any:
     )
 
 
-def available_models(key: str) -> List[str]:
-    """The provider's models in preference order, minus any cooling down for this key. May be empty."""
+def available_models(key: str, models: Optional[List[str]] = None) -> List[str]:
+    """The models (default: the provider's) in preference order, minus any cooling down for this key. May be empty."""
     now, kid = time.time(), _key_id(key)
-    return [m for m in MODELS.get(PROVIDER, []) if _cooldown_until.get(f"{kid}:{m}", 0) <= now]
+    return [m for m in (models or MODELS.get(PROVIDER, [])) if _cooldown_until.get(f"{kid}:{m}", 0) <= now]
+
+
+def retry_hint_seconds(message: str) -> Optional[float]:
+    """Seconds from a provider's "try again in ..." hint, or None when the message has none."""
+    hint = _RETRY_HINT.search(message)
+    if not hint:
+        return None
+    return sum(float(value) * _UNIT_SECONDS[unit.lower()] for value, unit in _DURATION_PART.findall(hint.group(1)))
 
 
 def _mark_failed(key: str, model: str, err: Exception) -> None:
@@ -116,35 +264,42 @@ def _mark_failed(key: str, model: str, err: Exception) -> None:
         _last_failure[kid] = f"{model}: {message[:160]}"
         return
     seconds, reason = rule
-    hint = _RETRY_HINT.search(message)
-    if seconds and hint and any(hint.groups()):
-        h, m, s = hint.groups()
-        seconds = min(int(h or 0) * 3600 + int(m or 0) * 60 + float(s or 0) + 1, _MAX_COOLDOWN_SECONDS)
+    hinted = retry_hint_seconds(message)
+    if seconds and hinted is not None:
+        seconds = min(hinted + 1, _MAX_COOLDOWN_SECONDS)
     if seconds:
         _cooldown_until[f"{kid}:{model}"] = time.time() + seconds
         logger.warning(f"{PROVIDER_LABEL} model {model} cooling down for {int(seconds)}s ({reason})")
     _last_failure[kid] = f"{model}: {reason}"
 
 
-def _unavailable_error(key: str) -> LLMUnavailableError:
+def _cooldown_waits(key: str, models: Optional[List[str]] = None) -> List[float]:
+    """Seconds left on each of these models' cooldowns for this key."""
     kid, now = _key_id(key), time.time()
-    waits = [until - now for k, until in _cooldown_until.items() if k.startswith(f"{kid}:") and until > now]
+    return [until - now for m in (models or MODELS.get(PROVIDER, []))
+            if (until := _cooldown_until.get(f"{kid}:{m}", 0)) > now]
+
+
+def _unavailable_error(key: str, models: Optional[List[str]] = None) -> LLMUnavailableError:
+    kid = _key_id(key)
+    waits = _cooldown_waits(key, models)
     retry = ""
-    if len(waits) == len(MODELS.get(PROVIDER, [])):
+    if len(waits) == len(models or MODELS.get(PROVIDER, [])):
         minutes = int(min(waits) // 60) + 1
         retry = f" Try again in about {minutes} min." if minutes < 120 else f" Try again in about {minutes // 60} hours."
     reason = _last_failure.get(kid, "every model failed")
     return LLMUnavailableError(f"{PROVIDER_LABEL} is unavailable (last error: {reason}).{retry}")
 
 
-def _with_fallback(call: Callable[[Any, str], Any]) -> Tuple[Any, str]:
-    """Run call(client, model) on the first model that succeeds. Returns (result, model)."""
+def _with_fallback(call: Callable[[Any, str], Any], models: Optional[List[str]] = None) -> Tuple[Any, str]:
+    """Run call(client, model) on the first model (default: the provider's models) that succeeds.
+    Returns (result, model)."""
     key = _resolve_key()
     if not key:
         raise LLMUnavailableError(NO_KEY_MESSAGE.get(PROVIDER, f"No API key configured for {PROVIDER_LABEL}."))
     client = _client(key)
-    for attempt in range(2):
-        for model in available_models(key):
+    for attempt in range(1 + RATE_LIMIT_RETRIES):
+        for model in available_models(key, models):
             try:
                 return call(client, model), model
             except Exception as err:
@@ -152,20 +307,27 @@ def _with_fallback(call: Callable[[Any, str], Any]) -> Tuple[Any, str]:
                 logger.warning(f"{PROVIDER_LABEL} model {model} failed: {err}")
         # Every model is cooling down. Per-minute rate limits clear within seconds, so wait once for the
         # soonest model instead of failing the request; longer limits (daily caps) fail immediately.
-        wait = _soonest_cooldown(key)
-        if attempt or wait is None or wait > MAX_COOLDOWN_WAIT_SECONDS:
+        wait = _soonest_cooldown(key, models)
+        if attempt == RATE_LIMIT_RETRIES or wait is None or wait > MAX_COOLDOWN_WAIT_SECONDS:
             break
         logger.info(f"All {PROVIDER_LABEL} models are rate-limited; waiting {wait:.0f}s for the next one")
         time.sleep(wait)
-    raise _unavailable_error(key)
+        for meter in _meters.get():
+            meter.add_wait(wait)
+    raise _unavailable_error(key, models)
 
 
-def _soonest_cooldown(key: str) -> Optional[float]:
-    """Seconds until the first of this key's models leaves cooldown; None if a model is available or none failed."""
-    if available_models(key):
+def cooldown_remaining(models: Optional[List[str]] = None) -> Optional[float]:
+    """Seconds until one of these models (default: the provider's) can be called again after rate limits;
+    None if one is available now."""
+    return _soonest_cooldown(_resolve_key(), models)
+
+
+def _soonest_cooldown(key: str, models: Optional[List[str]] = None) -> Optional[float]:
+    """Seconds until the first of these models leaves cooldown; None if a model is available or none failed."""
+    if available_models(key, models):
         return None
-    kid, now = _key_id(key), time.time()
-    waits = [until - now for k, until in _cooldown_until.items() if k.startswith(f"{kid}:") and until > now]
+    waits = _cooldown_waits(key, models)
     return min(waits) if waits else None
 
 
@@ -173,21 +335,31 @@ def _soonest_cooldown(key: str) -> Optional[float]:
 # Single-turn completion
 # ---------------------------------------------------------------------------
 
-def complete(prompt: str, json_mode: bool = False) -> Tuple[str, str]:
-    """Answer one prompt. Returns (text, model) or raises LLMUnavailableError."""
+def complete(
+    prompt: str,
+    json_mode: bool = False,
+    models: Optional[List[str]] = None,
+    temperature: Optional[float] = None,
+) -> Tuple[str, str]:
+    """Answer one prompt. Returns (text, model) or raises LLMUnavailableError.
+    models overrides the provider's model list (e.g. a separate judge model)."""
     def call(client: Any, model: str) -> str:
         if PROVIDER == "groq":
-            extra = {"response_format": {"type": "json_object"}} if json_mode else {}
-            res = client.chat.completions.create(model=model, messages=[{"role": "user", "content": prompt}], **extra)
+            extra: Dict[str, Any] = {"response_format": {"type": "json_object"}} if json_mode else {}
+            if temperature is not None:
+                extra["temperature"] = temperature
+            res = _metered(model, client.chat.completions.create(model=model, messages=[{"role": "user", "content": prompt}], **extra))
             text = res.choices[0].message.content
         else:
-            config = {"response_mime_type": "application/json"} if json_mode else None
-            text = client.models.generate_content(model=model, contents=prompt, config=config).text
+            config: Dict[str, Any] = {"response_mime_type": "application/json"} if json_mode else {}
+            if temperature is not None:
+                config["temperature"] = temperature
+            text = _metered(model, client.models.generate_content(model=model, contents=prompt, config=config or None)).text
         if not text:
             raise ValueError("empty response")
         return text
 
-    return _with_fallback(call)
+    return _with_fallback(call, models)
 
 
 # ---------------------------------------------------------------------------
@@ -239,13 +411,13 @@ def choose_tool_call(system: str, user: str, tools: List[Dict[str, Any]]) -> Lis
     """One forced tool-choice turn: the model must call one of the given tools (already-described as
     {"name", "description", "parameters": <JSON schema>}, e.g. tools listed by an MCP server). Returns its calls."""
     if PROVIDER == "groq":
-        msg, _ = _with_fallback(lambda client, model: client.chat.completions.create(
+        msg, _ = _with_fallback(lambda client, model: _metered(model, client.chat.completions.create(
             model=model,
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
             tools=[{"type": "function", "function": t} for t in tools],
             tool_choice="required",
             temperature=0.1,
-        ).choices[0].message)
+        )).choices[0].message)
         return [ToolCall(tc.id, tc.function.name, _parse_args(tc.function.arguments)) for tc in (msg.tool_calls or [])]
 
     from google.genai import types
@@ -259,10 +431,24 @@ def choose_tool_call(system: str, user: str, tools: List[Dict[str, Any]]) -> Lis
         temperature=0.1,
         automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
     )
-    response, _ = _with_fallback(lambda client, model: client.models.generate_content(
+    response, _ = _with_fallback(lambda client, model: _metered(model, client.models.generate_content(
         model=model, contents=user, config=config,
-    ))
+    )))
     return [ToolCall(c.id or c.name, c.name, dict(c.args or {})) for c in (response.function_calls or [])]
+
+
+def _as_plain_chat(history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """An OpenAI-style conversation without tool-call structure: tool calls and their results become text turns."""
+    plain = []
+    for m in history:
+        if m.get("role") == "tool":
+            plain.append({"role": "user", "content": f"Tool result:\n{m.get('content', '')}"})
+        elif m.get("role") == "assistant" and m.get("tool_calls"):
+            calls = ", ".join(f"{tc['function']['name']}({tc['function']['arguments']})" for tc in m["tool_calls"])
+            plain.append({"role": "assistant", "content": f"{m.get('content') or ''}\nCalled: {calls}".strip()})
+        else:
+            plain.append(m)
+    return plain
 
 
 class ToolChat:
@@ -284,12 +470,20 @@ class ToolChat:
                 automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
             )
 
-    def step(self) -> Tuple[List[ToolCall], str]:
-        """Ask the model for its next move: tool calls to run, or (when there are none) the final answer."""
+    def step(self, allow_tools: bool = True) -> Tuple[List[ToolCall], str]:
+        """Ask the model for its next move: tool calls to run, or (when there are none) the final answer.
+        allow_tools=False forces a final answer, e.g. once a step budget is used up."""
         if PROVIDER == "groq":
-            msg, _ = _with_fallback(lambda client, model: client.chat.completions.create(
+            if not allow_tools:
+                # Some models still emit a tool call when tool_choice is "none", which Groq rejects (400), so the
+                # final turn is plain chat: no tools offered, earlier tool calls and results written out as text
+                msg, _ = _with_fallback(lambda client, model: _metered(model, client.chat.completions.create(
+                    model=model, messages=_as_plain_chat(self.history), temperature=0.2,
+                )).choices[0].message)
+                return [], msg.content or ""
+            msg, _ = _with_fallback(lambda client, model: _metered(model, client.chat.completions.create(
                 model=model, messages=self.history, tools=self._schemas, tool_choice="auto", temperature=0.2,
-            ).choices[0].message)
+            )).choices[0].message)
             if not msg.tool_calls:
                 return [], msg.content or ""
             self.history.append({
@@ -302,9 +496,14 @@ class ToolChat:
             })
             return [ToolCall(tc.id, tc.function.name, _parse_args(tc.function.arguments)) for tc in msg.tool_calls], ""
 
-        response, _ = _with_fallback(lambda client, model: client.models.generate_content(
-            model=model, contents=self.history, config=self._config,
-        ))
+        config = self._config
+        if not allow_tools:
+            from google.genai import types
+            config = config.model_copy(update={"tool_config": types.ToolConfig(
+                function_calling_config=types.FunctionCallingConfig(mode="NONE"))})
+        response, _ = _with_fallback(lambda client, model: _metered(model, client.models.generate_content(
+            model=model, contents=self.history, config=config,
+        )))
         calls = response.function_calls or []
         if not calls:
             return [], response.text or ""

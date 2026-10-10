@@ -7,6 +7,7 @@ import { MarkdownMessage } from './MarkdownMessage';
 import { SourceCard } from './SourceCard';
 import { McpResults } from './McpResults';
 import { ComparisonCard } from './ComparisonCard';
+import { RunDetails } from './RunDetails';
 
 export const AssistantAvatar: React.FC<{ thinking?: boolean }> = ({ thinking }) => (
   <div
@@ -98,6 +99,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, onRet
         )}
 
         {message.mcp_results && message.mcp_results.length > 0 && <McpResults results={message.mcp_results} />}
+        {!message.comparison && <RunDetails message={message} />}
         {message.sources && message.sources.length > 0 && <SourceCard sources={message.sources} />}
 
         {!message.error && (
@@ -110,12 +112,18 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, onRet
   );
 };
 
-/** Shown while the agent works on an answer. */
-export const ThinkingMessage: React.FC<{ scoped?: string }> = ({ scoped }) => (
+/** Shown while the agent (or the team) works on an answer. */
+export const ThinkingMessage: React.FC<{ scoped?: string; team?: boolean }> = ({ scoped, team }) => (
   <div className="flex gap-4">
     <AssistantAvatar thinking />
     <div className="pt-1.5 flex items-center gap-2 text-[15px] text-zinc-500">
-      <span>{scoped ? `Reading ${scoped}` : 'Searching your documents'}</span>
+      <span>
+        {team
+          ? `The team is planning and searching${scoped ? ` ${scoped}` : ''}`
+          : scoped
+          ? `Reading ${scoped}`
+          : 'Searching your documents'}
+      </span>
       <span className="flex gap-1">
         {[0, 150, 300].map((delay) => (
           <span

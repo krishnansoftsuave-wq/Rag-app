@@ -17,8 +17,11 @@ export interface SourceCitation {
   score: number;
 }
 
+/** Who answers a chat question: the single agent, or the team (a manager with Concepts and Reference specialists). */
+export type AnswerMode = 'agent' | 'team';
+
 export interface SystemExecutionResult {
-  system: 'agent' | 'workflow';
+  system: 'agent' | 'team' | 'workflow';
   answer: string;
   latency_ms: number;
   total_tokens: number;
@@ -29,6 +32,8 @@ export interface SystemExecutionResult {
   used_fallback: boolean;
   trace: AgentStepTrace[];
   mcp_results?: McpToolResult[];
+  llm_calls?: number; // provider-reported LLM calls (agent and team modes)
+  models?: string[]; // models that answered those calls; more than one means a call fell back
 }
 
 export interface ComparisonMetrics {
@@ -82,8 +87,9 @@ export interface ChatMessage {
   error?: boolean; // an assistant message reporting that the question could not be answered
   sources?: SourceCitation[];
   used_fallback?: boolean;
-  mode?: 'compare' | 'agent' | 'workflow' | 'standard';
+  mode?: 'compare' | 'agent' | 'team' | 'workflow' | 'standard'; // on a user message: who it was asked to
   agent_result?: SystemExecutionResult;
+  team_result?: SystemExecutionResult;
   workflow_result?: SystemExecutionResult;
   comparison?: ComparisonMetrics;
   mcp_results?: McpToolResult[];
@@ -113,8 +119,9 @@ export interface ChatResponse {
   answer: string;
   sources: SourceCitation[];
   used_fallback: boolean;
-  mode?: 'compare' | 'agent' | 'workflow' | 'standard';
+  mode?: 'compare' | 'agent' | 'team' | 'workflow' | 'standard';
   agent_result?: SystemExecutionResult;
+  team_result?: SystemExecutionResult;
   workflow_result?: SystemExecutionResult;
   comparison?: ComparisonMetrics;
   mcp_results?: McpToolResult[];
@@ -136,6 +143,7 @@ export interface AgentStepTrace {
   total_tokens: number;
   step_cost: number;
   cumulative_cost: number;
+  raw_args?: Record<string, any>;
   details?: Record<string, any>;
 }
 

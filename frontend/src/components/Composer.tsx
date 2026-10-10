@@ -1,11 +1,16 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Plus, ArrowUp, FileText, Layers, ChevronDown, X, Loader2 } from 'lucide-react';
+import { Plus, ArrowUp, FileText, Layers, ChevronDown, X, Loader2, User, Users } from 'lucide-react';
 import { DocumentLibrary } from './DocumentLibrary';
-import { DocumentMetadata } from '@/types';
+import { AnswerMode, DocumentMetadata } from '@/types';
 
 const MAX_TEXTAREA_HEIGHT = 200;
+
+const ANSWER_MODES = [
+  { mode: 'agent' as const, label: 'Single', icon: User, title: 'Single agent: one agent with every search tool' },
+  { mode: 'team' as const, label: 'Team', icon: Users, title: 'Team: a manager splits the question between a Concepts and a Reference specialist' },
+];
 
 interface ComposerProps {
   onSend: (text: string) => void;
@@ -18,9 +23,12 @@ interface ComposerProps {
   isLibraryOpen: boolean;
   onLibraryOpenChange: (open: boolean) => void;
   libraryPlacement: 'top' | 'bottom';
+  answerMode: AnswerMode;
+  onAnswerModeChange: (mode: AnswerMode) => void;
 }
 
-/** The message box: grows with its text, Enter sends (Shift+Enter for a new line), + opens the document library. */
+/** The message box: grows with its text, Enter sends (Shift+Enter for a new line), + opens the document library,
+ * and the Single / Team switch picks who answers. */
 export const Composer: React.FC<ComposerProps> = ({
   onSend,
   isPending,
@@ -32,6 +40,8 @@ export const Composer: React.FC<ComposerProps> = ({
   isLibraryOpen,
   onLibraryOpenChange,
   libraryPlacement,
+  answerMode,
+  onAnswerModeChange,
 }) => {
   const [text, setText] = useState('');
   const rootRef = useRef<HTMLDivElement>(null);
@@ -155,10 +165,29 @@ export const Composer: React.FC<ComposerProps> = ({
             )
           )}
 
+          <div role="radiogroup" aria-label="Who answers" className="ml-auto inline-flex items-center rounded-full bg-zinc-100 p-0.5 shrink-0">
+            {ANSWER_MODES.map(({ mode, label, icon: Icon, title }) => (
+              <button
+                key={mode}
+                type="button"
+                role="radio"
+                aria-checked={answerMode === mode}
+                onClick={() => onAnswerModeChange(mode)}
+                title={title}
+                className={`inline-flex items-center gap-1.5 h-8 px-2.5 sm:px-3 rounded-full text-xs transition-colors ${
+                  answerMode === mode ? 'bg-white text-zinc-900 font-medium shadow-sm' : 'text-zinc-500 hover:text-zinc-800'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
+          </div>
+
           <button
             type="submit"
             disabled={!canSend}
-            className="ml-auto w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-zinc-900 text-white hover:bg-zinc-700 disabled:bg-zinc-200 disabled:text-zinc-400 transition-colors"
+            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-zinc-900 text-white hover:bg-zinc-700 disabled:bg-zinc-200 disabled:text-zinc-400 transition-colors"
             title={isPending ? 'Answering…' : 'Send'}
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-[18px] h-[18px]" />}

@@ -9,11 +9,14 @@ from app.schemas.chat import (
 )
 from app.services import hybrid_retriever_service, llm_service
 from app.agents.rag_agent import AdaptiveRAGAgent
+from app.agents.team.team_agent import TeamRAGAgent
 from app.workflows.fixed_rag_workflow import FixedRAGWorkflow
 from app.agents.state import AgentState
+from app.services.llm.client import track_usage
 
 router = APIRouter()
 agent_service = AdaptiveRAGAgent()
+team_service = TeamRAGAgent()  # manager + concepts / reference specialists (Week 10)
 workflow_service = FixedRAGWorkflow()
 
 
@@ -42,6 +45,19 @@ def _state_to_system_result(system_name: str, state: AgentState) -> SystemExecut
         trace=[t.to_dict() for t in state.trace],
         mcp_results=[McpToolResult(**r) for r in state.mcp_results]
     )
+
+
+def _run_measured(system_name: str, service, question: str, doc_id) -> tuple:
+    """Run the single agent or the team and report the provider-reported tokens and cost of every LLM call it
+    made (the single agent's own counters are estimates), so their answers can be compared fairly."""
+    with track_usage() as meter:
+        state = service.run(question=question, document_id=doc_id)
+    result = _state_to_system_result(system_name, state)
+    result.total_tokens = meter.total_tokens
+    result.cost = round(meter.cost, 6)
+    result.llm_calls = len(meter.calls)
+    result.models = meter.models
+    return state, result
 
 
 def _compute_comparison(agent_res: SystemExecutionResult, workflow_res: SystemExecutionResult) -> ComparisonMetrics:
@@ -114,8 +130,7 @@ def chat(request: ChatRequest):
     mode = (request.mode or "agent").lower()
 
     if mode == "agent":
-        agent_state = agent_service.run(question=request.question, document_id=doc_id)
-        agent_res = _state_to_system_result("agent", agent_state)
+        _, agent_res = _run_measured("agent", agent_service, request.question, doc_id)
         return ChatResponse(
             question=request.question,
             answer=agent_res.answer,
@@ -124,6 +139,17 @@ def chat(request: ChatRequest):
             mode="agent",
             agent_result=agent_res,
             mcp_results=agent_res.mcp_results
+        )
+
+    elif mode == "team":
+        _, team_res = _run_measured("team", team_service, request.question, doc_id)
+        return ChatResponse(
+            question=request.question,
+            answer=team_res.answer,
+            sources=team_res.sources,
+            used_fallback=team_res.used_fallback,
+            mode="team",
+            team_result=team_res
         )
 
     elif mode == "workflow":

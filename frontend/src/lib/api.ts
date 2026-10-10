@@ -135,7 +135,7 @@ export async function deleteDocument(docId: string): Promise<{ message: string }
 export async function sendChatMessage(
   question: string,
   docIds?: string[],
-  mode: 'compare' | 'agent' | 'workflow' | 'standard' = 'agent'
+  mode: 'compare' | 'agent' | 'team' | 'workflow' | 'standard' = 'agent'
 ): Promise<ChatResponse> {
   const res = await fetch(`${API_BASE_URL}/chat`, {
     method: 'POST',

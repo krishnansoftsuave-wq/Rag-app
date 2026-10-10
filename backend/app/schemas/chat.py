@@ -15,7 +15,7 @@ class ChatRequest(BaseModel):
     doc_ids: Optional[List[str]] = None
     provider: Optional[str] = "gemini"  # "gemini", "openai", or "auto"
     search_mode: Optional[str] = "hybrid"  # "hybrid", "vector", or "bm25"
-    mode: Optional[str] = "compare"  # "compare", "agent", "workflow", or "standard"
+    mode: Optional[str] = "compare"  # "compare", "agent", "team", "workflow", or "standard"
 
 
 class McpToolResult(BaseModel):
@@ -30,7 +30,7 @@ class McpToolResult(BaseModel):
 
 
 class SystemExecutionResult(BaseModel):
-    system: str  # "agent" or "workflow"
+    system: str  # "agent", "team" or "workflow"
     answer: str
     latency_ms: float
     total_tokens: int
@@ -41,6 +41,8 @@ class SystemExecutionResult(BaseModel):
     used_fallback: bool
     trace: List[Dict[str, Any]] = []
     mcp_results: List[McpToolResult] = []
+    llm_calls: int = 0  # provider-reported calls, when measured (agent and team modes)
+    models: List[str] = []  # models that answered those calls; more than one means a call fell back
 
 
 class ComparisonMetrics(BaseModel):
@@ -58,6 +60,7 @@ class ChatResponse(BaseModel):
     used_fallback: bool = False
     mode: str = "compare"
     agent_result: Optional[SystemExecutionResult] = None
+    team_result: Optional[SystemExecutionResult] = None
     workflow_result: Optional[SystemExecutionResult] = None
     comparison: Optional[ComparisonMetrics] = None
     mcp_results: List[McpToolResult] = []

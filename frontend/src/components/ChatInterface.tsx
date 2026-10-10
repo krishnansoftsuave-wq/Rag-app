@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { FileText, BarChart3, CalendarClock, ListChecks, UploadCloud } from 'lucide-react';
-import { ChatMessage, DocumentMetadata } from '@/types';
+import { AnswerMode, ChatMessage, DocumentMetadata } from '@/types';
 import { Composer } from './Composer';
 import { ChatMessageItem, ThinkingMessage } from './ChatMessageItem';
 
@@ -20,6 +20,8 @@ interface ChatInterfaceProps {
   onLibraryOpenChange: (open: boolean) => void;
   onSend: (text: string) => void;
   onRetry: (messageId: string) => void;
+  answerMode: AnswerMode;
+  onAnswerModeChange: (mode: AnswerMode) => void;
 }
 
 const SUGGESTIONS = [
@@ -44,11 +46,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onLibraryOpenChange,
   onSend,
   onRetry,
+  answerMode,
+  onAnswerModeChange,
 }) => {
   const endRef = useRef<HTMLDivElement>(null);
   const isEmpty = messages.length === 0 && !isPending;
-  // The document the pending question was asked about (the selection may have changed since)
-  const pendingDoc = isPending ? [...messages].reverse().find((m) => m.sender === 'user')?.attachment?.filename : undefined;
+  // The pending question's document and answer mode (the selections may have changed since)
+  const pendingQuestion = isPending ? [...messages].reverse().find((m) => m.sender === 'user') : undefined;
+  const pendingDoc = pendingQuestion?.attachment?.filename;
 
   // Jump to the latest message when switching chats; follow new messages smoothly
   useEffect(() => {
@@ -71,6 +76,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       isLibraryOpen={isLibraryOpen}
       onLibraryOpenChange={onLibraryOpenChange}
       libraryPlacement={placement}
+      answerMode={answerMode}
+      onAnswerModeChange={onAnswerModeChange}
     />
   );
 
@@ -126,7 +133,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           {messages.map((m) => (
             <ChatMessageItem key={m.id} message={m} onRetry={m.error ? () => onRetry(m.id) : undefined} />
           ))}
-          {isPending && <ThinkingMessage scoped={pendingDoc} />}
+          {isPending && <ThinkingMessage scoped={pendingDoc} team={pendingQuestion?.mode === 'team'} />}
           <div ref={endRef} />
         </div>
       </div>

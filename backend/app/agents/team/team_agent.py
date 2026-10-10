@@ -11,6 +11,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional
 
+from app.services.retrieval.version_policy import question_scope
 from app.agents.budgets import AgentBudgets
 from app.agents.logger import AgentExecutionLogger
 from app.agents.state import AgentState
@@ -18,6 +19,7 @@ from app.agents.team.a2a import Message, Task, TaskState, send_message
 from app.agents.team.manager import HANDOFF_MODES, Manager
 from app.agents.team.specialists import Specialist, build_specialists
 from app.agents.tools import estimate_tokens
+from app.core.tracing import span
 from app.services.llm.client import LLMUnavailableError, UsageMeter, track_usage, usage_label
 
 
@@ -49,6 +51,11 @@ class TeamRAGAgent:
         question_id: str = "q_team",
         top_k: int = 4
     ) -> AgentState:
+        # Archived docs are searched only if the question asks about an older version (retrieval/version_policy.py)
+        with question_scope(question):
+            return self._run(question, document_id, question_id, top_k)
+
+    def _run(self, question: str, document_id: Optional[str], question_id: str, top_k: int) -> AgentState:
         state = AgentState(question=question, document_id=document_id)
         # Same wall-clock budget as the single agent; specialists stop searching and report when it runs out
         deadline = state.start_time + self.budgets.max_wall_clock_seconds
@@ -56,7 +63,7 @@ class TeamRAGAgent:
         with track_usage() as meter:
             # 1. Plan: which specialist gets which part of the question
             start = time.time()
-            with usage_label("manager.plan"):
+            with usage_label("manager.plan"), span("manager.plan", stage="generation"):
                 sub_tasks, fallback_plan = self.manager.plan(question, self.cards)
             self._record(
                 state, meter, question_id, "manager.plan", "manager_plan",
@@ -104,7 +111,7 @@ class TeamRAGAgent:
             # 3. Synthesize: the manager writes the answer from what the specialists handed back
             report = self.manager.handoff_report([(spec.name, msg.text, task) for (spec, msg), task in zip(handoffs, tasks)], self.handoff)
             start = time.time()
-            with usage_label("manager.synthesize"):
+            with usage_label("manager.synthesize"), span("manager.synthesize", stage="generation"):
                 answer = self.manager.synthesize(question, report)
             handoff_tokens = estimate_tokens(" ".join(msg.text for _, msg in handoffs)) + estimate_tokens(report)
             self._record(
@@ -126,7 +133,8 @@ class TeamRAGAgent:
 
     @staticmethod
     def _delegate(specialist: Specialist, message: Message, context_id: str) -> Task:
-        with usage_label(specialist.name):
+        # A specialist's searches are their own retrieval spans; its remaining LLM calls count as generation
+        with usage_label(specialist.name), span(f"a2a_task:{specialist.name}", stage="generation"):
             return send_message(specialist, message, context_id=context_id)
 
     def _record(

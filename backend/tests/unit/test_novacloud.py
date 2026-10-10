@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 import datetime
 from app.services import hybrid_retriever_service, vector_store_service, chunk_text_with_spans
 from app.agents.rag_agent import AdaptiveRAGAgent
-from app.evaluation.evaluator import evaluate_answer
+from app.evaluation.evaluator import evaluate_case
 
 novacloud_text = """
 NovaTech Cloud Platform
@@ -255,81 +255,152 @@ questions_eval = [
     }
 ]
 
+# Week 11: failures found in production become permanent cases here (see tests/evals/*.json); they search every
+# indexed document, the developer docs included
+CASES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "evals")
+DEV_DOCS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "dev_docs")
+# A cheap 5-question run for the free-tier token limit: 3 stable NovaCloud cases as regression guards plus the
+# production-failure cases
+DRILL_GUARDS = ["Q1", "Q7", "Q12"]
+PAUSE_BETWEEN_QUESTIONS_SECONDS = 20  # lets the per-minute token limit recover
+
+
+def load_production_cases():
+    cases = []
+    for name in sorted(os.listdir(CASES_DIR)):
+        if name.endswith(".json"):
+            with open(os.path.join(CASES_DIR, name), encoding="utf-8") as f:
+                cases += [{**c, "document_id": None, "case_file": f"tests/evals/{name}"} for c in json.load(f)]
+    return cases
+
+
+def index_text(doc_id, filename, text):
+    """Index a document once (vector store and BM25), the same way the NovaCloud document is indexed."""
+    if doc_id in vector_store_service.documents_store:
+        return 0
+    spans = chunk_text_with_spans(text)
+    chunks = [{
+        "id": f"{doc_id}_chunk_{idx}", "doc_id": doc_id, "filename": filename, "chunk_index": idx,
+        "content": item["content"], "start_char": item["start_char"], "end_char": item["end_char"], "full_text": text,
+    } for idx, item in enumerate(spans)]
+    embeddings = hybrid_retriever_service.embedding_model.encode([c["content"] for c in chunks]).tolist()
+    vector_store_service.add_chunks(
+        doc_id=doc_id, filename=filename, chunks=chunks, embeddings=embeddings,
+        file_size=len(text.encode("utf-8")), upload_time=datetime.datetime.now().isoformat()
+    )
+    return len(chunks)
+
+
+def run_with_retry(agent, question, document_id, question_id):
+    """One retry after a minute when every model is rate-limited, so a token-per-minute cap is not a failed case."""
+    from app.services.llm.client import LLMUnavailableError
+    try:
+        return agent.run(question=question, document_id=document_id, question_id=question_id)
+    except LLMUnavailableError as err:
+        print(f"LLM unavailable ({err}); retrying in 60s", flush=True)
+        time.sleep(60)
+        return agent.run(question=question, document_id=document_id, question_id=question_id)
+
+
+def rescore(path):
+    with open(path, encoding="utf-8") as f:
+        run = json.load(f)
+    cases = {c["id"]: c for c in [{**q, "case_file": "tests/unit/test_novacloud.py"} for q in questions_eval] + load_production_cases()}
+    print(f"Re-scoring {path} (answers generated with prompt {run['prompt_version']}) with the current case definitions")
+    passed = 0
+    for r in run["results"]:
+        verdict = evaluate_case(r["generated"], cases[r["id"]])
+        passed += verdict["passed"]
+        print(f"  {'PASS' if verdict['passed'] else 'FAIL'}  {r['id']:<18} {verdict['reason']}")
+    print(f"SUITE RESULT: {passed}/{len(run['results'])} passed")
+
+
 def main():
+    import argparse
+    from app.services.llm.prompts import PROMPT_VERSION
+    parser = argparse.ArgumentParser(description="NovaCloud RAG evaluation suite (Week 6) plus production-failure cases (Week 11)")
+    parser.add_argument("--suite", choices=["full", "drill"], default="full",
+                        help="full: all 20 NovaCloud cases + production cases; drill: 3 guards + production cases")
+    parser.add_argument("--label", default=None, help="name of this run, e.g. red or green (results/week11/eval_<label>.json)")
+    parser.add_argument("--rescore", metavar="EVAL_JSON", help="re-judge the answers saved in a labelled run with the current "
+                                                               "case definitions; no LLM calls")
+    args = parser.parse_args()
+    if args.rescore:
+        rescore(args.rescore)
+        return
+
     doc_id = "novacloud_eval_doc"
     filename = "NovaCloud_RAG_Evaluation_Document.txt"
-    print("--- 1. Indexing NovaCloud document into Vector Store ---")
-    spans = chunk_text_with_spans(novacloud_text)
-    chunks = []
-    for idx, item in enumerate(spans):
-        chunks.append({
-            "id": f"{doc_id}_chunk_{idx}",
-            "doc_id": doc_id,
-            "filename": filename,
-            "chunk_index": idx,
-            "content": item["content"],
-            "start_char": item["start_char"],
-            "end_char": item["end_char"],
-            "full_text": novacloud_text
-        })
-    texts = [c["content"] for c in chunks]
-    embeddings = hybrid_retriever_service.embedding_model.encode(texts).tolist()
-    vector_store_service.add_chunks(
-        doc_id=doc_id,
-        filename=filename,
-        chunks=chunks,
-        embeddings=embeddings,
-        file_size=len(novacloud_text.encode('utf-8')),
-        upload_time=datetime.datetime.now().isoformat()
-    )
+    print("--- 1. Indexing documents into Vector Store ---")
+    vector_store_service.documents_store.pop(doc_id, None)  # always re-index the NovaCloud document, as before
+    print(f"NovaCloud document: {index_text(doc_id, filename, novacloud_text)} chunks")
+    for name in sorted(os.listdir(DEV_DOCS_DIR)):
+        with open(os.path.join(DEV_DOCS_DIR, name), encoding="utf-8") as f:
+            added = index_text(os.path.splitext(name)[0], name, f.read())
+        # Pages for old SDK versions are archived, so retrieval leaves them out unless a question asks for that version
+        status = "archived" if "_archived" in name else "current"
+        vector_store_service.set_document_status(os.path.splitext(name)[0], status)
+        print(f"{name}: {added or 'already indexed'}{' chunks' if added else ''} ({status})")
     hybrid_retriever_service.build_bm25_index()
-    print(f"Indexed {len(chunks)} chunks into Vector Store & BM25 index.")
 
-    print("\n--- 2. Running 20 Evaluation Questions against AdaptiveRAGAgent ---")
+    cases = [{**q, "document_id": doc_id, "case_file": "tests/unit/test_novacloud.py"} for q in questions_eval]
+    if args.suite == "drill":
+        cases = [c for c in cases if c["id"] in DRILL_GUARDS]
+    cases += load_production_cases()
+
+    print(f"\n--- 2. Running {len(cases)} evaluation questions against AdaptiveRAGAgent (prompt {PROMPT_VERSION}) ---")
     from app.agents.budgets import AgentBudgets
     agent = AdaptiveRAGAgent(budgets=AgentBudgets(max_wall_clock_seconds=45.0))
     eval_results = []
 
-    for idx, q_item in enumerate(questions_eval, 1):
-        q_id = q_item["id"]
-        cat = q_item["category"]
-        question = q_item["question"]
-        expected = q_item["expected"]
+    for idx, case in enumerate(cases, 1):
+        if idx > 1:
+            time.sleep(PAUSE_BETWEEN_QUESTIONS_SECONDS)
+        print(f"\n[{idx}/{len(cases)}] Evaluating {case['id']} ({case['category']}): '{case['question']}'", flush=True)
+        state = run_with_retry(agent, case["question"], case["document_id"], f"novacloud_{case['id']}")
 
-        print(f"\n[{idx}/20] Evaluating {q_id} ({cat}): '{question}'")
-        state = agent.run(question=question, document_id=doc_id, question_id=f"novacloud_{q_id}")
-        
         generated_answer = state.final_answer or ""
-        eval_metrics = evaluate_answer(generated_answer, expected, question_type=cat)
-
+        eval_metrics = evaluate_case(generated_answer, case)
         res = {
-            "id": q_id,
-            "category": cat,
-            "question": question,
-            "expected": expected,
+            "id": case["id"],
+            "category": case["category"],
+            "case_file": case["case_file"],
+            "question": case["question"],
+            "expected": case["expected"],
             "generated": generated_answer,
             "passed": eval_metrics["passed"],
             "score": eval_metrics["score"],
             "reason": eval_metrics["reason"],
             "steps": [s.action for s in state.trace],
-            "evidence_count": len(state.retrieved_evidence)
+            "evidence_count": len(state.retrieved_evidence),
+            "evidence_ids": [f"{c.get('doc_id')}#{c.get('chunk_index')}" for c in state.retrieved_evidence],
         }
         eval_results.append(res)
         status = "PASSED" if res["passed"] else "FAILED"
-        print(f"Result: {status} (Score: {res['score']})", flush=True)
+        print(f"Result: {status} (Score: {res['score']}) {res['reason']}", flush=True)
         print(f"Generated Answer: {generated_answer[:150]}...", flush=True)
 
     print("\n================ EVALUATION SUMMARY ================", flush=True)
     passed_count = sum(1 for r in eval_results if r["passed"])
     failed_count = len(eval_results) - passed_count
+    print(f"Prompt version: {PROMPT_VERSION}   Suite: {args.suite}", flush=True)
     print(f"Total Questions: {len(eval_results)}", flush=True)
     print(f"Passed: {passed_count} ({passed_count/len(eval_results)*100:.1f}%)", flush=True)
     print(f"Failed: {failed_count} ({failed_count/len(eval_results)*100:.1f}%)", flush=True)
+    for r in eval_results:
+        print(f"  {'PASS' if r['passed'] else 'FAIL'}  {r['id']:<18} {r['reason']}", flush=True)
+    print(f"SUITE RESULT: {passed_count}/{len(eval_results)} passed", flush=True)
 
     # Save output to JSON file for detailed breakdown
-    out_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "novacloud_eval_results.json")
+    backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    if args.label:
+        out_path = os.path.join(backend_dir, "results", "week11", f"eval_{args.label}.json")
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    else:
+        out_path = os.path.join(backend_dir, "novacloud_eval_results.json")
     with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(eval_results, f, indent=2)
+        json.dump({"prompt_version": PROMPT_VERSION, "suite": args.suite, "passed": passed_count,
+                   "total": len(eval_results), "results": eval_results} if args.label else eval_results, f, indent=2)
     print(f"\nDetailed evaluation results written to: {out_path}")
 
 if __name__ == "__main__":

@@ -88,6 +88,17 @@ class VectorStoreService:
         }
         self._save_doc_metadata()
 
+    def set_document_status(self, doc_id: str, status: str) -> bool:
+        """Mark a document "current" or "archived" (docs for an old version; see retrieval/version_policy.py)."""
+        if doc_id not in self.documents_store:
+            return False
+        self.documents_store[doc_id]["status"] = status
+        self._save_doc_metadata()
+        return True
+
+    def archived_doc_ids(self) -> set:
+        return {d for d, meta in self.documents_store.items() if meta.get("status") == "archived"}
+
     def get_all_documents(self) -> List[Dict[str, Any]]:
         docs = []
         for doc in self.documents_store.values():

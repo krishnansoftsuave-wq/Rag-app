@@ -1,7 +1,9 @@
 from typing import List
 from app.core.logger import get_logger
 from app.schemas.chat import SourceCitation, ChatResponse
+from app.core.tracing import record_contexts, span
 from app.services.llm.client import complete
+from app.services.llm.prompts import ANSWER_PROMPT, PROMPT_VERSION
 from app.services.retrieval.excerpts import focus_terms, focused_excerpt
 
 logger = get_logger("llm_service")
@@ -34,20 +36,12 @@ class LLMService:
              for i, s in enumerate(sources[:MAX_SOURCES_IN_PROMPT])]
         )
 
-        prompt = f"""You are an intelligent RAG (Retrieval-Augmented Generation) assistant.
-Answer the user's question based strictly on the provided context passages below.
-If the answer is partially available, answer as best as possible using the context.
-Always cite the source files (e.g., [File: filename.pdf]) when referencing facts.
-{extra_instructions}
-Question: {question}
-
-Context Passages:
-{context_str}
-
-Detailed Answer:"""
+        prompt = ANSWER_PROMPT.format(extra_instructions=extra_instructions, question=question, context=context_str)
 
         # An LLM is required: raises LLMUnavailableError when no model can answer
-        answer, _ = complete(prompt)
+        with span("generate_answer", stage="generation", prompt_version=PROMPT_VERSION):
+            record_contexts(sources[:MAX_SOURCES_IN_PROMPT])  # exactly the chunks the model was shown
+            answer, _ = complete(prompt)
         return ChatResponse(
             question=question,
             answer=answer,

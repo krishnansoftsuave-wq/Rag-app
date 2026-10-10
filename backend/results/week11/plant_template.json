@@ -1,0 +1,478 @@
+{
+  "trace_id": "ba4dd030f1874c3cb5babfb97155f62c",
+  "timestamp": "2026-10-10T13:52:47.613+00:00",
+  "mode": "agent",
+  "user_id": "anonymous",
+  "username": null,
+  "session_id": "chat_capture",
+  "prompt_version": "rag-v1.0",
+  "query": "can you give me a quick python example for uploading a pdf into a novacloud bucket",
+  "input_type": "code_sample",
+  "doc_ids": null,
+  "search_mode": "hybrid",
+  "termination_reason": "completed",
+  "system_answers": null,
+  "answer": "Here's a quick Python example for uploading a PDF into a NovaCloud bucket.\n\n**Using the current SDK (3.x, recommended):**\n\n```python\nfrom novacloud import Client\n\nclient = Client(api_key=\"YOUR_API_KEY\", region=\"us-east\")\n\n# Upload a PDF to a bucket\nclient.objects.upload(\n    \"my-bucket\",\n    \"reports/report.pdf\",   # object key\n    \"report.pdf\",           # local file path\n    metadata={\"owner\": \"finance\"}\n)\n```\n\n`client.objects.upload()` streams the file in parts, so it works for files of any size up to 5 TB.\n\n**Install:**\n```bash\npip install novacloud-sdk\n```\n\n---\n\n**Note on older SDK (2.x, archived):** If you're on an older version, the equivalent was:\n\n```python\nfrom novacloud import NovaClient\n\nclient = NovaClient.connect(\"YOUR_API_KEY\", region=\"us-east\")\n\nwith open(\"report.pdf\", \"rb\") as f:\n    client.put_object(\"my-bucket\", \"reports/report.pdf\", f.read())\n```\n\nHowever, `NovaClient.connect()` and `client.put_object()` were deprecated in 3.0 and removed in 3.2, so prefer the 3.x `Client` + `client.objects.upload()` approach above.",
+  "answer_chars": 1051,
+  "answer_has_code": true,
+  "retrieved_context": [
+    {
+      "chunk_id": "novacloud_sdk_v2_archived#0",
+      "doc_id": "novacloud_sdk_v2_archived",
+      "filename": "novacloud_sdk_v2_archived.md",
+      "chunk_index": 0,
+      "score": 0.9096,
+      "preview": "# Uploading files to a bucket with the NovaCloud Python SDK\n\nApplies to: novacloud-sdk 2.x\nLast updated: 2024-03-11\n\nThis guide shows how to upload a file to a ",
+      "retrieved_by": "retrieval"
+    },
+    {
+      "chunk_id": "novacloud_sdk_v3_reference#0",
+      "doc_id": "novacloud_sdk_v3_reference",
+      "filename": "novacloud_sdk_v3_reference.md",
+      "chunk_index": 0,
+      "score": 0.8863,
+      "preview": "# NovaCloud Python SDK 3.x reference\n\nApplies to: novacloud-sdk 3.0 and later (current release 3.4.1)\n\n## Client\n\n    from novacloud import Client\n\n    client =",
+      "retrieved_by": "retrieval"
+    },
+    {
+      "chunk_id": "novacloud_sdk_v2_archived#1",
+      "doc_id": "novacloud_sdk_v2_archived",
+      "filename": "novacloud_sdk_v2_archived.md",
+      "chunk_index": 1,
+      "score": 0.8322,
+      "preview": "Use put_object to upload a file to a bucket. Pass the bucket name, the object key and the file contents:\n\n    with open(\"report.pdf\", \"rb\") as f:\n        client",
+      "retrieved_by": "retrieval"
+    },
+    {
+      "chunk_id": "novacloud_sdk_v3_reference#1",
+      "doc_id": "novacloud_sdk_v3_reference",
+      "filename": "novacloud_sdk_v3_reference.md",
+      "chunk_index": 1,
+      "score": 0.8148,
+      "preview": "client.objects.upload(\"my-bucket\", \"reports/report.pdf\", \"report.pdf\", metadata={\"owner\": \"finance\"})\n\nclient.objects.download(bucket, key, destination) writes ",
+      "retrieved_by": "retrieval"
+    },
+    {
+      "chunk_id": "novacloud_sdk_v3_reference#2",
+      "doc_id": "novacloud_sdk_v3_reference",
+      "filename": "novacloud_sdk_v3_reference.md",
+      "chunk_index": 2,
+      "score": 0.8027,
+      "preview": "| Deprecated (2.x)            | Replacement (3.x)                 | Status                        |\n|-----------------------------|-----------------------------",
+      "retrieved_by": "retrieval"
+    },
+    {
+      "chunk_id": "novacloud_sdk_v2_archived#2",
+      "doc_id": "novacloud_sdk_v2_archived",
+      "filename": "novacloud_sdk_v2_archived.md",
+      "chunk_index": 2,
+      "score": 0.7868,
+      "preview": "put_object raises NovaError when the bucket does not exist or the API key cannot write to it.",
+      "retrieved_by": "retrieval"
+    },
+    {
+      "chunk_id": "ed046646#10",
+      "doc_id": "ed046646",
+      "filename": "novacloud_rag_test_document.pdf",
+      "chunk_index": 10,
+      "score": 0.7814,
+      "preview": "NovaObject\nNovaObject provides object storage for files, backups, media, and large datasets. Objects can be up to 5 TB in\nsize. NovaObject provides three storag",
+      "retrieved_by": "retrieval"
+    },
+    {
+      "chunk_id": "w10_novacloud#11",
+      "doc_id": "w10_novacloud",
+      "filename": "novacloud_platform_docs.txt",
+      "chunk_index": 11,
+      "score": 0.7778,
+      "preview": "NovaObject provides object storage for files, backups, media, and large datasets. Objects can be up to 5 TB in\nsize. NovaObject provides three storage classes: ",
+      "retrieved_by": "retrieval"
+    },
+    {
+      "chunk_id": "novacloud_eval_doc#14",
+      "doc_id": "novacloud_eval_doc",
+      "filename": "NovaCloud_RAG_Evaluation_Document.txt",
+      "chunk_index": 14,
+      "score": 0.7778,
+      "preview": "NovaObject provides object storage for files, backups, media, and large datasets. Objects can be up to 5 TB in size. NovaObject provides three storage classes: ",
+      "retrieved_by": "retrieval"
+    },
+    {
+      "chunk_id": "ed046646#17",
+      "doc_id": "ed046646",
+      "filename": "novacloud_rag_test_document.pdf",
+      "chunk_index": 17,
+      "score": 0.7756,
+      "preview": "Audit logs include user identity, timestamp, source\nIP, action, resource, and result. Audit logs are retained for 90 days by default. Enterprise customers can i",
+      "retrieved_by": "retrieval"
+    },
+    {
+      "chunk_id": "w10_novacloud#0",
+      "doc_id": "w10_novacloud",
+      "filename": "novacloud_platform_docs.txt",
+      "chunk_index": 0,
+      "score": 0.0763,
+      "preview": "NovaTech Cloud Platform - NovaCloud Developer Documentation",
+      "retrieved_by": "retrieval"
+    },
+    {
+      "chunk_id": "ed046646#14",
+      "doc_id": "ed046646",
+      "filename": "novacloud_rag_test_document.pdf",
+      "chunk_index": 14,
+      "score": 0.0754,
+      "preview": "[Page 6]\nNovaCloud RAG Evaluation Document  Page 6\nPage 5 — Security Architecture\nSecurity Architecture\nSecurity is a core component of NovaCloud. NovaCloud us",
+      "retrieved_by": "retrieval"
+    },
+    {
+      "chunk_id": "w10_novacloud#25",
+      "doc_id": "w10_novacloud",
+      "filename": "novacloud_platform_docs.txt",
+      "chunk_index": 25,
+      "score": 0.0739,
+      "preview": "month. Archive storage costs $0.004 per GB per month. Retrieving data from Archive storage may incur additional\ncharges.\nNetwork Pricing\nData transferred into N",
+      "retrieved_by": "retrieval"
+    },
+    {
+      "chunk_id": "w10_novacloud#15",
+      "doc_id": "w10_novacloud",
+      "filename": "novacloud_platform_docs.txt",
+      "chunk_index": 15,
+      "score": 0.0669,
+      "preview": "Page 5 — Security Architecture\nSecurity Architecture\nSecurity is a core component of NovaCloud. NovaCloud uses a layered security model consisting of identity\nm",
+      "retrieved_by": "retrieval"
+    }
+  ],
+  "context_ids": [
+    "novacloud_sdk_v2_archived#0",
+    "novacloud_sdk_v3_reference#0",
+    "novacloud_sdk_v2_archived#1",
+    "novacloud_sdk_v3_reference#1",
+    "novacloud_sdk_v3_reference#2",
+    "novacloud_sdk_v2_archived#2",
+    "ed046646#10",
+    "w10_novacloud#11",
+    "novacloud_eval_doc#14",
+    "ed046646#17",
+    "w10_novacloud#0",
+    "ed046646#14",
+    "w10_novacloud#25",
+    "w10_novacloud#15"
+  ],
+  "spans": [
+    {
+      "span_id": "e4fcb01153af",
+      "parent_id": null,
+      "name": "mcp_select_server",
+      "stage": "tool",
+      "start_offset_ms": 0.0,
+      "latency_ms": 1451.3,
+      "input_tokens": 290,
+      "cached_input_tokens": 0,
+      "output_tokens": 112,
+      "cost_usd": 0.0001107,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "llm_calls": [
+        {
+          "label": null,
+          "model": "openai/gpt-oss-120b",
+          "input_tokens": 290,
+          "cached_input_tokens": 0,
+          "output_tokens": 112,
+          "cost_usd": 0.00011070000000000001
+        }
+      ],
+      "attrs": {},
+      "error": null
+    },
+    {
+      "span_id": "2883c0fe5982",
+      "parent_id": null,
+      "name": "agent_llm_step",
+      "stage": "generation",
+      "start_offset_ms": 1452.3,
+      "latency_ms": 903.1,
+      "input_tokens": 998,
+      "cached_input_tokens": 0,
+      "output_tokens": 92,
+      "cost_usd": 0.0011664,
+      "models": [
+        "qwen/qwen3.8-27b"
+      ],
+      "llm_calls": [
+        {
+          "label": null,
+          "model": "qwen/qwen3.8-27b",
+          "input_tokens": 998,
+          "cached_input_tokens": 0,
+          "output_tokens": 92,
+          "cost_usd": 0.0011664000000000002
+        }
+      ],
+      "attrs": {
+        "step": 2,
+        "prompt_version": "rag-v1.0",
+        "decision": [
+          "semantic_vector_search",
+          "exact_keyword_search"
+        ]
+      },
+      "error": null
+    },
+    {
+      "span_id": "a1099c3ff4c8",
+      "parent_id": null,
+      "name": "tool:semantic_vector_search",
+      "stage": "retrieval",
+      "start_offset_ms": 2355.4,
+      "latency_ms": 1119.2,
+      "input_tokens": 0,
+      "cached_input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": 0,
+      "models": [],
+      "llm_calls": [],
+      "attrs": {
+        "args": {
+          "query": "upload PDF file to novacloud bucket python example",
+          "top_k": 10,
+          "document_id": null
+        }
+      },
+      "error": null
+    },
+    {
+      "span_id": "1bcbd6b64ea3",
+      "parent_id": "a1099c3ff4c8",
+      "name": "retrieval",
+      "stage": "retrieval",
+      "start_offset_ms": 2355.4,
+      "latency_ms": 1119.2,
+      "input_tokens": 159,
+      "cached_input_tokens": 0,
+      "output_tokens": 269,
+      "cost_usd": 0.00018525,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "llm_calls": [
+        {
+          "label": null,
+          "model": "openai/gpt-oss-120b",
+          "input_tokens": 159,
+          "cached_input_tokens": 0,
+          "output_tokens": 269,
+          "cost_usd": 0.00018525
+        }
+      ],
+      "attrs": {
+        "search_mode": "vector",
+        "top_k": 10,
+        "query": "upload PDF file to novacloud bucket python example",
+        "doc_ids": null,
+        "context_ids": [
+          "novacloud_sdk_v2_archived#0",
+          "novacloud_sdk_v3_reference#0",
+          "novacloud_sdk_v2_archived#1",
+          "novacloud_sdk_v3_reference#1",
+          "novacloud_sdk_v3_reference#2",
+          "novacloud_sdk_v2_archived#2",
+          "ed046646#10",
+          "w10_novacloud#11",
+          "novacloud_eval_doc#14",
+          "ed046646#17"
+        ]
+      },
+      "error": null
+    },
+    {
+      "span_id": "1b01610bfe10",
+      "parent_id": null,
+      "name": "tool:exact_keyword_search",
+      "stage": "retrieval",
+      "start_offset_ms": 3475.6,
+      "latency_ms": 966.5,
+      "input_tokens": 0,
+      "cached_input_tokens": 0,
+      "output_tokens": 0,
+      "cost_usd": 0,
+      "models": [],
+      "llm_calls": [],
+      "attrs": {
+        "args": {
+          "query": "novacloud upload bucket python",
+          "top_k": 10,
+          "document_id": null
+        }
+      },
+      "error": null
+    },
+    {
+      "span_id": "9fbb8423083f",
+      "parent_id": "1b01610bfe10",
+      "name": "retrieval",
+      "stage": "retrieval",
+      "start_offset_ms": 3475.6,
+      "latency_ms": 966.5,
+      "input_tokens": 155,
+      "cached_input_tokens": 0,
+      "output_tokens": 336,
+      "cost_usd": 0.00022485,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "llm_calls": [
+        {
+          "label": null,
+          "model": "openai/gpt-oss-120b",
+          "input_tokens": 155,
+          "cached_input_tokens": 0,
+          "output_tokens": 336,
+          "cost_usd": 0.00022485
+        }
+      ],
+      "attrs": {
+        "search_mode": "bm25",
+        "top_k": 10,
+        "query": "novacloud upload bucket python",
+        "doc_ids": null,
+        "context_ids": [
+          "novacloud_sdk_v2_archived#0",
+          "novacloud_sdk_v3_reference#0",
+          "novacloud_sdk_v3_reference#1",
+          "novacloud_sdk_v2_archived#1",
+          "novacloud_sdk_v3_reference#2",
+          "novacloud_sdk_v2_archived#2",
+          "w10_novacloud#0",
+          "ed046646#14",
+          "w10_novacloud#25",
+          "w10_novacloud#15"
+        ]
+      },
+      "error": null
+    },
+    {
+      "span_id": "52c6b2cd834d",
+      "parent_id": null,
+      "name": "agent_llm_step",
+      "stage": "generation",
+      "start_offset_ms": 4442.1,
+      "latency_ms": 2161.2,
+      "input_tokens": 2463,
+      "cached_input_tokens": 256,
+      "output_tokens": 798,
+      "cost_usd": 0.00082905,
+      "models": [
+        "openai/gpt-oss-120b"
+      ],
+      "llm_calls": [
+        {
+          "label": null,
+          "model": "openai/gpt-oss-120b",
+          "input_tokens": 2463,
+          "cached_input_tokens": 256,
+          "output_tokens": 798,
+          "cost_usd": 0.0008290499999999999
+        }
+      ],
+      "attrs": {
+        "step": 4,
+        "prompt_version": "rag-v1.0",
+        "decision": [
+          "validate_evidence"
+        ]
+      },
+      "error": null
+    },
+    {
+      "span_id": "8d70dac23c4d",
+      "parent_id": null,
+      "name": "tool:validate_evidence",
+      "stage": "tool",
+      "start_offset_ms": 6603.3,
+      "latency_ms": 323.3,
+      "input_tokens": 728,
+      "cached_input_tokens": 0,
+      "output_tokens": 65,
+      "cost_usd": 0.0008424,
+      "models": [
+        "qwen/qwen3.8-27b"
+      ],
+      "llm_calls": [
+        {
+          "label": null,
+          "model": "qwen/qwen3.8-27b",
+          "input_tokens": 728,
+          "cached_input_tokens": 0,
+          "output_tokens": 65,
+          "cost_usd": 0.0008424
+        }
+      ],
+      "attrs": {
+        "args": {
+          "question": "can you give me a quick python example for uploading a pdf into a novacloud bucket",
+          "retrieved_context": "# Uploading files to a bucket with the NovaCloud Python SDK\n\nApplies to: novacloud-sdk 2.x\nLast updated: 2024-03-11\n\nThis guide shows how to upload a file to a NovaObject bucket from Python, how to set metadata on the uploaded\nfile, and how to download it again.\n\n## Install and connect\n\nInstall the SDK with pip:\n\n    pip install novacloud-sdk==2.9.4\n\nCreate a client with your API key:\n\n    from novacloud import NovaClient\n\n    client = NovaClient.connect(\"YOUR_API_KEY\", region=\"us-east\")\n\n## Upload a file to a bucket\n\nUse put_object to upload a file to a bucket. Pass the bucket name, the object key and the file contents:\n\n    with open(\"report.pdf\", \"rb\") as f:\n        client.put_object(\"my-bucket\", \"reports/report.pdf\", f.read())\n\nTo set metadata on the uploaded file, pass a metadata dictionary:\n\n    client.put_object(\"my-bucket\", \"reports/report.pdf\", data, metadata={\"owner\": \"finance\"})\n\nput_object reads the whole file into memory, so for files larger than 100 MB use put_object_multipart.\n\n## Download a file\n\n    data = client.get_object(\"my-bucket\", \"reports/report.pdf\")\n\n## Errors\n\n# NovaCloud Python SDK 3.x reference\n\nApplies to: novacloud-sdk 3.0 and later (current release 3.4.1)\n\n## Client\n\n    from novacloud import Client\n\n    client = Client(api_key=\"YOUR_API_KEY\", region=\"us-east\")\n\nNovaClient.connect() was deprecated in 3.0 and removed in 3.2. Use Client(api_key=...) instead.\n\n## Objects API\n\nThe Objects API stores files in NovaObject buckets. Every object operation lives under client.objects.\n\nclient.objects.upload(bucket, key, path_or_file, metadata=None) streams the file in parts, so it works for files\nof any size up to 5 TB:\n\nclient.objects.upload(\"my-bucket\", \"reports/report.pdf\", \"report.pdf\", metadata={\"owner\": \"finance\"})\n\nclient.objects.download(bucket, key, destination) writes an object to a local path.\n\n## Deprecations\n\n| Deprecated (2.x)            | Replacement (3.x)                 | Status                        |\n|-----------------------------|-----------------------------------|-------------------------------|\n| NovaClient.connect()        | Client(api_key=...)               | removed in 2.2                |\n| client.put_object()         | client.objects.upload()           | deprecated in 3.0, removed 3.2|\n| client.put_object_multipart | client.objects.upload()           | removed in 3.2                |\n| client.get_object()         | client.objects.download()         | deprecated in 3.0, removed 3.2|"
+        }
+      },
+      "error": null
+    },
+    {
+      "span_id": "5861792915bb",
+      "parent_id": null,
+      "name": "agent_llm_step",
+      "stage": "generation",
+      "start_offset_ms": 6927.6,
+      "latency_ms": 907.0,
+      "input_tokens": 3723,
+      "cached_input_tokens": 0,
+      "output_tokens": 282,
+      "cost_usd": 0.0041064,
+      "models": [
+        "qwen/qwen3.8-27b"
+      ],
+      "llm_calls": [
+        {
+          "label": null,
+          "model": "qwen/qwen3.8-27b",
+          "input_tokens": 3723,
+          "cached_input_tokens": 0,
+          "output_tokens": 282,
+          "cost_usd": 0.0041064
+        }
+      ],
+      "attrs": {
+        "step": 5,
+        "prompt_version": "rag-v1.0",
+        "decision": "final_answer"
+      },
+      "error": null
+    }
+  ],
+  "totals": {
+    "latency_ms": 7835.6,
+    "llm_calls": 7,
+    "input_tokens": 8516,
+    "cached_input_tokens": 256,
+    "output_tokens": 1954,
+    "total_tokens": 10470,
+    "cost_usd": 0.00746505
+  },
+  "cost_by_stage": {
+    "retrieval": 0.0004101,
+    "generation": 0.00610185,
+    "tool": 0.0009531
+  },
+  "latency_by_stage_ms": {
+    "retrieval": 2085.7,
+    "generation": 3971.3,
+    "tool": 1774.6
+  },
+  "models": [
+    "openai/gpt-oss-120b",
+    "qwen/qwen3.8-27b"
+  ],
+  "status": "ok",
+  "error": null
+}

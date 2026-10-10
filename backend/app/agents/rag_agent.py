@@ -1,6 +1,7 @@
 import json
 import time
 from typing import Optional, Dict, Any
+from app.services.retrieval.version_policy import question_scope
 from app.agents.state import AgentState
 from app.agents.budgets import AgentBudgets
 from app.agents.logger import AgentExecutionLogger
@@ -23,6 +24,11 @@ from app.mcp.client.agent_tools import (
 )
 from app.mcp.client.manager import mcp_client_manager
 from app.schemas.chat import SourceCitation
+from app.core.tracing import span
+from app.services.llm.prompts import AGENT_SYSTEM_PROMPT, PROMPT_VERSION
+
+# Tools whose work is retrieving chunks; their spans count toward the retrieval stage, other tools toward "tool"
+RETRIEVAL_TOOLS = {"semantic_vector_search", "exact_keyword_search", "search_document", "refine_document_search"}
 
 # Gemini pricing defaults ($0.075 / 1M input, $0.30 / 1M output)
 MODEL_INPUT_COST_PER_1M = 0.075
@@ -65,22 +71,18 @@ class AdaptiveRAGAgent:
         question_id: str = "q_adaptive",
         top_k: int = 4
     ) -> AgentState:
+        # Archived docs are searched only if the question asks about an older version (retrieval/version_policy.py)
+        with question_scope(question):
+            return self._run(question, document_id, question_id, top_k)
+
+    def _run(self, question: str, document_id: Optional[str], question_id: str, top_k: int) -> AgentState:
         state = AgentState(question=question, document_id=document_id)
 
         accumulated_chunks: Dict[str, Dict[str, Any]] = {}
         terms = focus_terms(question)
 
         # LLM function-calling orchestration. An LLM is required: errors propagate as LLMUnavailableError
-        system_instruction = (
-            "You are an expert autonomous RAG research agent. "
-            "Injected Tools Available:\n"
-            "1. semantic_vector_search: Dense vector retrieval for conceptual queries.\n"
-            "2. exact_keyword_search: BM25 sparse keyword retrieval for specific terms, codes, or names.\n"
-            "3. python_calculator: Deterministic math calculation.\n"
-            "4. summarize_context: Summarize passages.\n"
-            "5. validate_evidence: Evaluate context completeness.\n"
-            "Use tools as needed to answer the user question. Call tools iteratively until sufficient evidence is found, then provide your complete final answer."
-        )
+        system_instruction = AGENT_SYSTEM_PROMPT
 
         # MCP stages 1-2: decide whether this request needs an external MCP server; only then connect and list its tools.
         # Stage 3 (_run_mcp_action) runs once the documents have been searched, so the tool gets the passages.
@@ -122,7 +124,11 @@ class AdaptiveRAGAgent:
 
             start_t = time.time()
             in_tok = estimate_tokens(str(chat.history))
-            tool_calls, final_text = chat.step()
+            with span("agent_llm_step", stage="generation", step=state.iteration_count + 1,
+                      prompt_version=PROMPT_VERSION) as llm_span:
+                tool_calls, final_text = chat.step()
+                if llm_span is not None:
+                    llm_span.attrs["decision"] = [c.name for c in tool_calls] or "final_answer"
             latency_ms = (time.time() - start_t) * 1000
 
             # Calculate LLM usage
@@ -138,16 +144,18 @@ class AdaptiveRAGAgent:
 
                     # Run tool; a bad call (unknown tool or arguments) is reported back to the model to correct
                     tool_start = time.time()
-                    if tool_fn is None:
-                        tool_result = {"error": f"Unknown tool '{fn_name}'. Available: {', '.join(REGISTERED_TOOLS)}"}
-                    else:
-                        # Inject document_id if not present in LLM args
-                        if "document_id" in tool_fn.__code__.co_varnames and "document_id" not in fn_args:
-                            fn_args["document_id"] = document_id
-                        try:
-                            tool_result = tool_fn(**fn_args)
-                        except TypeError as err:
-                            tool_result = {"error": f"Invalid arguments for '{fn_name}': {err}"}
+                    stage = "retrieval" if fn_name in RETRIEVAL_TOOLS else "tool"
+                    with span(f"tool:{fn_name}", stage=stage, args=fn_args):
+                        if tool_fn is None:
+                            tool_result = {"error": f"Unknown tool '{fn_name}'. Available: {', '.join(REGISTERED_TOOLS)}"}
+                        else:
+                            # Inject document_id if not present in LLM args
+                            if "document_id" in tool_fn.__code__.co_varnames and "document_id" not in fn_args:
+                                fn_args["document_id"] = document_id
+                            try:
+                                tool_result = tool_fn(**fn_args)
+                            except TypeError as err:
+                                tool_result = {"error": f"Invalid arguments for '{fn_name}': {err}"}
                     tool_latency = (time.time() - tool_start) * 1000
 
                     # Collect evidence chunks if returned by tool
@@ -224,7 +232,8 @@ class AdaptiveRAGAgent:
         if not mcp_client_manager.active_servers():
             return None
         start_t = time.time()
-        server, reason = select_mcp_server(question)
+        with span("mcp_select_server", stage="tool"):
+            server, reason = select_mcp_server(question)
         latency_ms = (time.time() - start_t) * 1000
         chosen = server["name"] if server else "none"
         state.record_step(
@@ -250,7 +259,8 @@ class AdaptiveRAGAgent:
     def _load_mcp_tools(self, state: AgentState, server: Dict[str, Any], question_id: str) -> Dict[str, McpAgentTool]:
         """Stage 2: connect to the chosen server now and list its tools for the LLM."""
         start_t = time.time()
-        tools, error = load_server_tools(server, reserved_names=set(REGISTERED_TOOLS))
+        with span("mcp_list_tools", stage="tool", server=server["name"]):
+            tools, error = load_server_tools(server, reserved_names=set(REGISTERED_TOOLS))
         latency_ms = (time.time() - start_t) * 1000
         state.record_step(
             action="mcp_list_tools",
@@ -291,21 +301,23 @@ class AdaptiveRAGAgent:
         """Stage 3: the LLM gets only the chosen server's tools and must pick the one (and its arguments) that
         fulfils the request; the backend runs it. Returns a note for the research conversation, if any."""
         start_t = time.time()
-        calls = choose_tool_call(
-            system=(
-                f"You fulfil the user's request with the tools of the MCP server '{server['name']}'. Pick the tool "
-                "that does what the request asks and fill in its arguments from the request. The relevant document "
-                "passages are supplied to the tool automatically."
-            ),
-            user=f"User request: {state.question}",
-            tools=[t.declaration for t in mcp_tools.values()],
-        )
+        with span("mcp_choose_tool", stage="tool", server=server["name"]):
+            calls = choose_tool_call(
+                system=(
+                    f"You fulfil the user's request with the tools of the MCP server '{server['name']}'. Pick the tool "
+                    "that does what the request asks and fill in its arguments from the request. The relevant document "
+                    "passages are supplied to the tool automatically."
+                ),
+                user=f"User request: {state.question}",
+                tools=[t.declaration for t in mcp_tools.values()],
+            )
         notes = []
         for call in calls:
             tool = mcp_tools.get(call.name)
             if not tool:
                 continue
-            summary = self._run_mcp_tool(state, tool, dict(call.args), accumulated_chunks, terms)
+            with span(f"mcp_call:{tool.tool_name}", stage="tool", server=server["name"], args=dict(call.args)):
+                summary = self._run_mcp_tool(state, tool, dict(call.args), accumulated_chunks, terms)
             latency_ms = (time.time() - start_t) * 1000
             state.record_step(
                 action=f"mcp_call:{tool.tool_name}",

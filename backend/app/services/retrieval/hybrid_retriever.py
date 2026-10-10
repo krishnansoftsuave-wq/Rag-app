@@ -8,6 +8,8 @@ from app.core.logger import get_logger
 from app.schemas.chat import SourceCitation
 from app.services.retrieval.vector_store import VectorStoreService
 from app.services.llm.client import complete
+from app.core.tracing import record_contexts, span
+from app.services.retrieval import version_policy
 
 logger = get_logger("hybrid_retriever")
 
@@ -174,6 +176,25 @@ class HybridRetrieverService:
         top_k: int = DEFAULT_TOP_K,
         search_mode: str = "hybrid"
     ) -> List[SourceCitation]:
+        # One span per retrieval (its query expansion LLM call included); the chunks it returns are logged by id
+        with span("retrieval", stage="retrieval", search_mode=search_mode, top_k=top_k, query=query, doc_ids=doc_ids,
+                  version_policy=version_policy.POLICY) as s:
+            # Archived docs (old versions) are searched only when the user asks about an older version
+            excluded = set() if version_policy.wants_archived(query) else self.vector_store.archived_doc_ids()
+            citations = self._retrieve(query, doc_ids, top_k, search_mode, excluded)
+            if s is not None:
+                s.attrs["archived_excluded"] = sorted(excluded)
+            record_contexts(citations)
+        return citations
+
+    def _retrieve(
+        self,
+        query: str,
+        doc_ids: Optional[List[str]],
+        top_k: int,
+        search_mode: str,
+        excluded_doc_ids: Optional[set] = None
+    ) -> List[SourceCitation]:
         if self.vector_store.collection.count() == 0:
             return []
 
@@ -194,6 +215,10 @@ class HybridRetrieverService:
         bm25_candidates = []
         if search_mode in ["hybrid", "bm25"]:
             bm25_candidates = self._bm25_search(query=expanded_q, doc_ids=doc_ids, fetch_k=fetch_k)
+
+        if excluded_doc_ids:
+            vector_candidates = [c for c in vector_candidates if c["metadata"].get("doc_id") not in excluded_doc_ids]
+            bm25_candidates = [c for c in bm25_candidates if c["metadata"].get("doc_id") not in excluded_doc_ids]
 
         # 3. Output mode formatting
         if search_mode == "vector":

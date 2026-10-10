@@ -1,0 +1,146 @@
+{
+  "prompt_version": "rag-v1.1",
+  "suite": "drill",
+  "passed": 5,
+  "total": 5,
+  "results": [
+    {
+      "id": "Q1",
+      "category": "Direct fact",
+      "case_file": "tests/unit/test_novacloud.py",
+      "question": "When was NovaTech Systems founded?",
+      "expected": "NovaTech Systems was founded in 2018.",
+      "generated": "NovaTech Systems was founded in **2018**.",
+      "passed": true,
+      "score": 1.0,
+      "reason": "Matched 4/4 key concept terms (100%).",
+      "steps": [
+        "mcp_select_server",
+        "tool_call:search_document",
+        "tool_call:validate_evidence",
+        "llm_final_answer"
+      ],
+      "evidence_count": 5,
+      "evidence_ids": [
+        "novacloud_eval_doc#1",
+        "novacloud_eval_doc#2",
+        "novacloud_eval_doc#11",
+        "novacloud_eval_doc#5",
+        "novacloud_eval_doc#34"
+      ]
+    },
+    {
+      "id": "Q7",
+      "category": "Negative / absence",
+      "case_file": "tests/unit/test_novacloud.py",
+      "question": "Does NovaFunction support executions longer than 15 minutes?",
+      "expected": "No. The maximum NovaFunction execution time is 15 minutes.",
+      "generated": "No. NovaFunction is limited to a maximum execution time of **15\u202fminutes**. Executions that would run longer than this limit are not supported.",
+      "passed": true,
+      "score": 1.0,
+      "reason": "Matched 5/5 key concept terms (100%).",
+      "steps": [
+        "mcp_select_server",
+        "tool_call:search_document",
+        "tool_call:validate_evidence",
+        "llm_final_answer"
+      ],
+      "evidence_count": 5,
+      "evidence_ids": [
+        "novacloud_eval_doc#11",
+        "novacloud_eval_doc#27",
+        "novacloud_eval_doc#16",
+        "novacloud_eval_doc#12",
+        "novacloud_eval_doc#10"
+      ]
+    },
+    {
+      "id": "Q12",
+      "category": "Exact numeric retrieval",
+      "case_file": "tests/unit/test_novacloud.py",
+      "question": "What is the default NovaQueue visibility timeout?",
+      "expected": "30 seconds.",
+      "generated": "The default NovaQueue visibility timeout is **30\u202fseconds**.",
+      "passed": true,
+      "score": 1.0,
+      "reason": "Matched 1/1 key concept terms (100%).",
+      "steps": [
+        "mcp_select_server",
+        "tool_call:search_document",
+        "tool_call:validate_evidence",
+        "llm_final_answer"
+      ],
+      "evidence_count": 5,
+      "evidence_ids": [
+        "novacloud_eval_doc#16",
+        "novacloud_eval_doc#19",
+        "novacloud_eval_doc#25",
+        "novacloud_eval_doc#29",
+        "novacloud_eval_doc#20"
+      ]
+    },
+    {
+      "id": "W11-DEPRECATED-1",
+      "category": "code_sample",
+      "case_file": "tests/evals/deprecated_method_cases.json",
+      "question": "Show me Python code to upload a file to a bucket with the NovaCloud SDK.",
+      "expected": "Use the 3.x Client and client.objects.upload(bucket, key, file).",
+      "generated": "Here's how to upload a file to a bucket using the current NovaCloud Python SDK (3.x, current release 3.4.1):\n\n```python\nfrom novacloud import Client\n\n# Initialize the client\nclient = Client(api_key=\"YOUR_API_KEY\", region=\"us-east\")\n\n# Upload a file to a bucket\nclient.objects.upload(\n    \"my-bucket\",              # bucket name\n    \"reports/report.pdf\",     # object key (path within the bucket)\n    \"report.pdf\",             # local file path (or file object)\n    metadata={\"owner\": \"finance\"}  # optional metadata\n)\n```\n\n**Key points:**\n- `client.objects.upload(bucket, key, path_or_file, metadata=None)` is the current method for uploading files.\n- It **streams the file in parts**, so it works for files of any size up to **5 TB**.\n- The third argument can be either a local file path (string) or a file object.\n- `metadata` is optional and lets you attach custom key-value pairs to the object.\n\n**Note on older versions:** If you're on SDK 2.x, the old method was `client.put_object()`, but that was deprecated in 3.0 and **removed in 3.2**. New code should always use `client.objects.upload()`. Similarly, `NovaClient.connect()` was removed in 3.2 \u2014 use `Client(api_key=...)` instead.",
+      "passed": true,
+      "score": 1.0,
+      "reason": "All required strings present, no forbidden ones.",
+      "steps": [
+        "mcp_select_server",
+        "tool_call:search_document",
+        "tool_call:search_document",
+        "llm_final_answer"
+      ],
+      "evidence_count": 5,
+      "evidence_ids": [
+        "novacloud_sdk_v3_reference#0",
+        "novacloud_sdk_v3_reference#1",
+        "novacloud_sdk_v3_reference#2",
+        "novacloud_sdk_v3_reference#3",
+        "w10_novacloud#12"
+      ]
+    },
+    {
+      "id": "W11-LEGACY-V2",
+      "category": "code_sample",
+      "case_file": "tests/evals/deprecated_method_cases.json",
+      "question": "We are pinned to novacloud-sdk 2.x and cannot upgrade yet. How do we upload a file to a bucket on 2.x?",
+      "expected": "On 2.x, client.put_object() still works; pin novacloud-sdk<3.0.",
+      "generated": "**Uploading a file to a NovaObject bucket with novacloud\u2011sdk\u202f2.x**\n\n```python\n# 1. Install the exact 2.x version you need\n#    (e.g. 2.9.4 \u2013 the last 2.x release)\npip install novacloud-sdk==2.9.4\n\n# 2. Create a client with your API key\nfrom novacloud import NovaClient\n\nclient = NovaClient.connect(\n    \"YOUR_API_KEY\",          # replace with your real key\n    region=\"us-east\"         # or the region your bucket lives in\n)\n\n# 3. Upload a file\n\n# a) Small file \u2013 read the whole file into memory\nwith open(\"report.pdf\", \"rb\") as f:\n    data = f.read()                     # bytes\n    client.put_object(\n        bucket=\"my-bucket\",             # bucket name\n        key=\"reports/report.pdf\",       # object key (path inside bucket)\n        data=data,                      # file contents\n        metadata={\"owner\": \"finance\"}   # optional metadata dictionary\n    )\n\n# b) Large file ( > 100\u202fMB ) \u2013 use multipart upload\n#    (the SDK will stream the file in parts)\nclient.put_object_multipart(\n    bucket=\"my-bucket\",\n    key=\"reports/large_report.pdf\",\n    file_path=\"large_report.pdf\",       # path to the local file\n    metadata={\"owner\": \"finance\"}\n)\n```\n\n**Key points**\n\n| Step | What to do | Why |\n|------|------------|-----|\n| 1 | Pin to a 2.x release (`==2.9.4` is the last 2.x) | Keeps you on the supported 2.x API. |\n| 2 | Use `NovaClient.connect()` | The 2.x constructor for a client. |\n| 3a | `client.put_object()` | Uploads the entire file in one request (good for <\u202f100\u202fMB). |\n| 3b | `client.put_object_multipart()` | Streams large files in parts (up to 5\u202fTB). |\n| Metadata | Pass a `metadata` dict to `put_object`/`put_object_multipart` | Adds custom key/value pairs to the object. |\n\n**What you *should not* do**\n\n* Do **not** use the 3.x `Client` class or `client.objects.upload()` \u2013 those are only for novacloud\u2011sdk\u202f3.x and later.\n* Do **not** rely on any methods that were removed after 2.x (e.g., `client.put_object_multipart` is still present in 2.x, but `client.objects.upload()` is not).\n\nThat\u2019s all you need to upload a file to a bucket while staying on novacloud\u2011sdk\u202f2.x.",
+      "passed": true,
+      "score": 1.0,
+      "reason": "All required strings present, no forbidden ones.",
+      "steps": [
+        "mcp_select_server",
+        "tool_call:semantic_vector_search",
+        "tool_call:exact_keyword_search",
+        "tool_call:refine_document_search",
+        "llm_final_answer"
+      ],
+      "evidence_count": 17,
+      "evidence_ids": [
+        "novacloud_sdk_v2_archived#0",
+        "novacloud_sdk_v3_reference#0",
+        "novacloud_sdk_v3_reference#2",
+        "ed046646#10",
+        "w10_novacloud#11",
+        "novacloud_eval_doc#14",
+        "w10_novacloud#15",
+        "novacloud_eval_doc#18",
+        "novacloud_eval_doc#29",
+        "w10_novacloud#25",
+        "novacloud_sdk_v3_reference#3",
+        "novacloud_sdk_v3_reference#1",
+        "novacloud_sdk_v2_archived#1",
+        "ed046646#1",
+        "eval_agentic_4d75#0",
+        "novacloud_sdk_v2_archived#2",
+        "novacloud_eval_doc#6"
+      ]
+    }
+  ]
+}

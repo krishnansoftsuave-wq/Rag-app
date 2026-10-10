@@ -118,7 +118,7 @@ export default function Home() {
   const runQuestion = async (chatId: string, question: string, mode: AnswerMode, attachment?: ChatAttachment) => {
     setPendingChatIds((prev) => new Set(prev).add(chatId));
     try {
-      const response = await sendChatMessage(question, attachment ? [attachment.doc_id] : undefined, mode);
+      const response = await sendChatMessage(question, attachment ? [attachment.doc_id] : undefined, mode, chatId);
       // A backend from before the team mode existed answers an unknown mode with its default comparison
       if (response.mode !== mode) {
         throw new Error(

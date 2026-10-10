@@ -1,0 +1,7 @@
+Re-scoring results/week11/eval_red.json (answers generated with prompt rag-v1.0) with the current case definitions
+  PASS  Q1                 Matched 4/4 key concept terms (100%).
+  PASS  Q7                 Matched 5/5 key concept terms (100%).
+  PASS  Q12                Matched 1/1 key concept terms (100%).
+  FAIL  W11-DEPRECATED-1   code sample uses ['put_object', 'NovaClient.connect']
+  PASS  W11-LEGACY-V2      All required strings present, no forbidden ones.
+SUITE RESULT: 4/5 passed

@@ -1,0 +1,96 @@
+[2026-10-10 19:23:38] [INFO] [llm_client]: LLM provider: Groq (models: openai/gpt-oss-120b, qwen/qwen3.8-27b, openai/gpt-oss-20b)
+[2026-10-10 19:23:38] [INFO] [vector_store]: Initializing Persistent ChromaDB Client at D:\From-c-drive\.gemini\antigravity\scratch\rag-fullstack-app\backend\data\chromadb (collection: rag_jinaai_jina-embeddings-v2-base-en)
+[2026-10-10 19:23:38] [INFO] [hybrid_retriever]: Loading embedding model: jinaai/jina-embeddings-v2-base-en
+[2026-10-10 19:23:45] [INFO] [hybrid_retriever]: Successfully built BM25 index with 148 chunks.
+--- 1. Indexing documents into Vector Store ---
+NovaCloud document: 37 chunks
+novacloud_sdk_v2_archived.md: already indexed
+novacloud_sdk_v3_reference.md: already indexed
+[2026-10-10 19:23:49] [INFO] [hybrid_retriever]: Successfully built BM25 index with 148 chunks.
+
+--- 2. Running 5 evaluation questions against AdaptiveRAGAgent (prompt rag-v1.1) ---
+
+[1/5] Evaluating Q1 (Direct fact): 'When was NovaTech Systems founded?'
+[2026-10-10 19:23:51] [INFO] [agent_execution]: [Agent] question_id=novacloud_Q1 step=1 action=mcp_select_server input_summary="servers=1" result_summary="server=none" latency_ms=1414.9 tokens=0 cost=$0.00000
+[2026-10-10 19:23:52] [INFO] [hybrid_retriever]: Dynamic query expansion via LLM (openai/gpt-oss-120b): 'NovaTech Systems founded' -> 'NovaTech Systems founded NovaTech Systems incorporation NovaTech Systems establishment date NovaTech Systems founding year NovaTech Systems company history NovaTech Systems launch'
+[2026-10-10 19:23:52] [INFO] [agent_execution]: [Agent] question_id=novacloud_Q1 step=2 action=tool_call:search_document input_summary="args={'document_id': 'novacloud_eval_doc', 'query': 'NovaTech Systems founded', 'top_k': 5}" result_summary="tool=search_document" latency_ms=1425.8 tokens=308 cost=$0.00003
+[2026-10-10 19:23:54] [INFO] [agent_execution]: [Agent] question_id=novacloud_Q1 step=3 action=tool_call:validate_evidence input_summary="args={'question': 'When was NovaTech Systems founded?', 'retrieved_context': 'NovaTech Systems is a fictional technology company founded in 2018 with its headquarters in Austin, Texas.'}" result_summary="tool=validate_evidence" latency_ms=1922.1 tokens=1131 cost=$0.00010
+[2026-10-10 19:23:55] [INFO] [agent_execution]: [Agent] question_id=novacloud_Q1 termination=completed total_steps=4 total_tokens=2695 total_cost=$0.00022
+Result: PASSED (Score: 1.0) Matched 4/4 key concept terms (100%).
+Generated Answer: NovaTech Systems was founded in **2018**....
+
+[2/5] Evaluating Q7 (Negative / absence): 'Does NovaFunction support executions longer than 15 minutes?'
+[2026-10-10 19:24:15] [INFO] [agent_execution]: [Agent] question_id=novacloud_Q7 step=1 action=mcp_select_server input_summary="servers=1" result_summary="server=none" latency_ms=595.8 tokens=0 cost=$0.00000
+[2026-10-10 19:24:17] [INFO] [hybrid_retriever]: Dynamic query expansion via LLM (openai/gpt-oss-120b): 'NovaFunction execution time limit 15 minutes' -> 'NovaFunction execution time limit 15 minutes Azure Functions timeout limit AWS Lambda max execution time Google Cloud Functions duration limit OpenWhisk action timeout Serverless function execution limit'
+[2026-10-10 19:24:17] [INFO] [agent_execution]: [Agent] question_id=novacloud_Q7 step=2 action=tool_call:search_document input_summary="args={'document_id': 'novacloud_eval_doc', 'query': 'NovaFunction execution time limit 15 minutes', 'top_k': 5}" result_summary="tool=search_document" latency_ms=1684.2 tokens=319 cost=$0.00003
+[2026-10-10 19:24:18] [INFO] [agent_execution]: [Agent] question_id=novacloud_Q7 step=3 action=tool_call:validate_evidence input_summary="args={'question': 'Does NovaFunction support executions longer than 15 minutes?', 'retrieved_context': 'The maximum execution time for a NovaFunction is 15 minutes. NovaFunction automatically scales based on incoming requests. Customers are charged based on execution duration and allocated memory. For latency-sensitive applications, NovaTech recommends keeping frequently executed functions small and avoiding unnecessary initialization work.'}" result_summary="tool=validate_evidence" latency_ms=1579.1 tokens=1333 cost=$0.00013
+[2026-10-10 19:24:19] [INFO] [agent_execution]: [Agent] question_id=novacloud_Q7 termination=completed total_steps=4 total_tokens=3156 total_cost=$0.00028
+Result: PASSED (Score: 1.0) Matched 5/5 key concept terms (100%).
+Generated Answer: No. NovaFunction is limited to a maximum execution time of **15 minutes**. Executions that would run longer than that exceed the platform’s limit and ...
+
+[3/5] Evaluating Q12 (Exact numeric retrieval): 'What is the default NovaQueue visibility timeout?'
+[2026-10-10 19:24:40] [INFO] [agent_execution]: [Agent] question_id=novacloud_Q12 step=1 action=mcp_select_server input_summary="servers=1" result_summary="server=none" latency_ms=802.6 tokens=0 cost=$0.00000
+[2026-10-10 19:24:41] [INFO] [hybrid_retriever]: Dynamic query expansion via LLM (openai/gpt-oss-120b): 'default NovaQueue visibility timeout' -> 'default NovaQueue visibility timeout OpenStack Nova queue visibility timeout default Nova compute RPC visibility timeout NovaQueue default message visibility timeout OpenStack messaging queue timeout settings Nova RPC timeout configuration'
+[2026-10-10 19:24:41] [INFO] [agent_execution]: [Agent] question_id=novacloud_Q12 step=2 action=tool_call:search_document input_summary="args={'document_id': 'novacloud_eval_doc', 'query': 'default NovaQueue visibility timeout', 'top_k': 5}" result_summary="tool=search_document" latency_ms=1301.8 tokens=314 cost=$0.00003
+[2026-10-10 19:24:42] [INFO] [agent_execution]: [Agent] question_id=novacloud_Q12 step=3 action=tool_call:validate_evidence input_summary="args={'question': 'What is the default NovaQueue visibility timeout?', 'retrieved_context': 'NovaQueue is a managed message queue used for asynchronous communication between services. A queue can retain messages for up to 14 days. NovaQueue supports visibility timeouts. When a consumer receives a message, the message becomes temporarily invisible to other consumers. If the consumer fails to acknowledge the message before the visibility timeout expires, the message becomes available again.\nThe default visibility timeout is 30 seconds. NovaQueue supports dead-letter queues. Messages that repeatedly fail processing can be moved to a dead-letter queue for investigation.\nNovaScheduler'}" result_summary="tool=validate_evidence" latency_ms=1240.9 tokens=1371 cost=$0.00014
+[2026-10-10 19:24:43] [INFO] [agent_execution]: [Agent] question_id=novacloud_Q12 termination=completed total_steps=4 total_tokens=3187 total_cost=$0.00029
+Result: PASSED (Score: 1.0) Matched 1/1 key concept terms (100%).
+Generated Answer: The default NovaQueue visibility timeout is **30 seconds**....
+
+[4/5] Evaluating W11-DEPRECATED-1 (code_sample): 'Show me Python code to upload a file to a bucket with the NovaCloud SDK.'
+[2026-10-10 19:25:04] [INFO] [agent_execution]: [Agent] question_id=novacloud_W11-DEPRECATED-1 step=1 action=mcp_select_server input_summary="servers=1" result_summary="server=none" latency_ms=704.8 tokens=0 cost=$0.00000
+[2026-10-10 19:25:04] [WARNING] [llm_client]: Groq model openai/gpt-oss-120b failed: Error code: 400 - {'error': {'message': 'Tool call validation failed: tool call validation failed: parameters for tool search_document did not match schema: errors: [`/document_id`: expected string, but got null]', 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '{"name": "search_document", "arguments": {\n  "document_id": null,\n  "query": "NovaCloud SDK upload file to bucket Python",\n  "top_k": 5\n}}'}}
+[2026-10-10 19:25:06] [INFO] [hybrid_retriever]: Dynamic query expansion via LLM (openai/gpt-oss-120b): 'upload file to bucket NovaCloud SDK Python' -> 'upload file to bucket NovaCloud SDK Python NovaCloudPythonSDK NovaCloudBucketUpload PythonObjectStorageAPI NovaCloudClientLibrary'
+[2026-10-10 19:25:06] [INFO] [agent_execution]: [Agent] question_id=novacloud_W11-DEPRECATED-1 step=2 action=tool_call:semantic_vector_search input_summary="args={'query': 'upload file to bucket NovaCloud SDK Python', 'top_k': 10, 'document_id': None}" result_summary="tool=semantic_vector_search" latency_ms=2147.6 tokens=331 cost=$0.00004
+[2026-10-10 19:25:07] [INFO] [hybrid_retriever]: Dynamic query expansion via LLM (openai/gpt-oss-120b): 'NovaCloud upload file bucket' -> 'NovaCloud upload file bucket NovaCloud storage API file upload endpoint object bucket management S3 compatible storage'
+[2026-10-10 19:25:07] [INFO] [agent_execution]: [Agent] question_id=novacloud_W11-DEPRECATED-1 step=3 action=tool_call:exact_keyword_search input_summary="args={'query': 'NovaCloud upload file bucket', 'top_k': 10, 'document_id': None}" result_summary="tool=exact_keyword_search" latency_ms=1748.4 tokens=331 cost=$0.00004
+[2026-10-10 19:25:07] [WARNING] [llm_client]: Groq model openai/gpt-oss-120b cooling down for 7s (rate limit reached (429))
+[2026-10-10 19:25:07] [WARNING] [llm_client]: Groq model openai/gpt-oss-120b failed: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m4d13rxrebsvrqkx1xtrc8q8` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 5998, Requested 2914. Please try again in 6.84s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+[2026-10-10 19:25:08] [INFO] [hybrid_retriever]: Dynamic query expansion via LLM (qwen/qwen3.8-27b): 'client.objects.upload parameters example metadata' -> 'client.objects.upload parameters example metadata client.objects.upload options constructor object_keys upload_options metadata_fields image_metadata'
+[2026-10-10 19:25:08] [INFO] [agent_execution]: [Agent] question_id=novacloud_W11-DEPRECATED-1 step=4 action=tool_call:refine_document_search input_summary="args={'document_id': 'novacloud_sdk_v3_reference', 'query': 'client.objects.upload parameters example metadata', 'top_k': 5}" result_summary="tool=refine_document_search" latency_ms=895.7 tokens=2022 cost=$0.00016
+[2026-10-10 19:25:08] [WARNING] [llm_client]: Groq model qwen/qwen3.8-27b cooling down for 4s (rate limit reached (429))
+[2026-10-10 19:25:08] [WARNING] [llm_client]: Groq model qwen/qwen3.8-27b failed: Error code: 429 - {'error': {'message': 'Rate limit reached for model `qwen/qwen3.8-27b` in organization `org_01m4d13rxrebsvrqkx1xtrc8q8` service tier `on_demand` on input tokens per minute (ITPM): Limit 7000, Used 3689, Requested 3686. Please try again in 3.214285714s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+[2026-10-10 19:25:09] [INFO] [agent_execution]: [Agent] question_id=novacloud_W11-DEPRECATED-1 termination=completed total_steps=5 total_tokens=6075 total_cost=$0.00063
+Result: FAILED (Score: 0.0) contains forbidden ['put_object', 'NovaClient.connect']
+Generated Answer: Below is a minimal, self‑contained example that uploads a file to a NovaObject bucket using the **current NovaCloud SDK (3.x)**.  
+The code uses the n...
+
+[5/5] Evaluating W11-LEGACY-V2 (code_sample): 'We are pinned to novacloud-sdk 2.x and cannot upgrade yet. How do we upload a file to a bucket on 2.x?'
+[2026-10-10 19:25:30] [INFO] [agent_execution]: [Agent] question_id=novacloud_W11-LEGACY-V2 step=1 action=mcp_select_server input_summary="servers=1" result_summary="server=none" latency_ms=704.1 tokens=0 cost=$0.00000
+[2026-10-10 19:25:31] [WARNING] [llm_client]: Groq model openai/gpt-oss-120b failed: Error code: 400 - {'error': {'message': 'Tool call validation failed: tool call validation failed: parameters for tool search_document did not match schema: errors: [`/document_id`: expected string, but got null]', 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '{"name": "search_document", "arguments": {\n  "document_id": null,\n  "query": "novacloud-sdk 2.x upload file to bucket",\n  "top_k": 5\n}}'}}
+[2026-10-10 19:25:32] [INFO] [hybrid_retriever]: Dynamic query expansion via LLM (openai/gpt-oss-120b): 'upload file to bucket novacloud-sdk 2.x' -> 'upload file to bucket novacloud-sdk 2.x Novacloud SDK uploadObject Novacloud bucket putObject Novacloud SDK 2.x multipart upload Novacloud storage API file transfer Novacloud presigned URL upload'
+[2026-10-10 19:25:32] [INFO] [agent_execution]: [Agent] question_id=novacloud_W11-LEGACY-V2 step=2 action=tool_call:semantic_vector_search input_summary="args={'query': 'upload file to bucket novacloud-sdk 2.x', 'top_k': 10, 'document_id': None}" result_summary="tool=semantic_vector_search" latency_ms=2470.3 tokens=336 cost=$0.00003
+[2026-10-10 19:25:34] [INFO] [hybrid_retriever]: Dynamic query expansion via LLM (openai/gpt-oss-120b): 'upload file bucket 2.x' -> 'upload file bucket 2.x S3 multipart upload AWS SDK for Java 2.x Google Cloud Storage bucket upload MinIO bucket API OpenStack Swift container upload'
+[2026-10-10 19:25:34] [INFO] [agent_execution]: [Agent] question_id=novacloud_W11-LEGACY-V2 step=3 action=tool_call:exact_keyword_search input_summary="args={'query': 'upload file bucket 2.x', 'top_k': 10, 'document_id': None}" result_summary="tool=exact_keyword_search" latency_ms=3231.4 tokens=336 cost=$0.00003
+[2026-10-10 19:25:34] [WARNING] [llm_client]: Groq model openai/gpt-oss-120b cooling down for 5s (rate limit reached (429))
+[2026-10-10 19:25:34] [WARNING] [llm_client]: Groq model openai/gpt-oss-120b failed: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m4d13rxrebsvrqkx1xtrc8q8` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 5470, Requested 3163. Please try again in 4.7475s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+[2026-10-10 19:25:55] [WARNING] [llm_client]: Groq model qwen/qwen3.8-27b cooling down for 60s (request timed out)
+[2026-10-10 19:25:55] [WARNING] [llm_client]: Groq model qwen/qwen3.8-27b failed: Request timed out.
+[2026-10-10 19:25:56] [INFO] [hybrid_retriever]: Dynamic query expansion via LLM (openai/gpt-oss-20b): 'put_object_multipart large file upload' -> 'put_object_multipart large file upload s3 multipart upload aws large file upload multipart upload API s3 upload part s3 large file transfer'
+[2026-10-10 19:25:56] [INFO] [agent_execution]: [Agent] question_id=novacloud_W11-LEGACY-V2 step=4 action=tool_call:refine_document_search input_summary="args={'document_id': 'novacloud_sdk_v2_archived', 'query': 'put_object_multipart large file upload', 'top_k': 5}" result_summary="tool=refine_document_search" latency_ms=21711.6 tokens=2207 cost=$0.00017
+[2026-10-10 19:25:58] [INFO] [hybrid_retriever]: Dynamic query expansion via LLM (openai/gpt-oss-120b): 'novacloud-sdk 2.x error handling put_object' -> 'novacloud-sdk 2.x error handling put_object NovaCloud SDK 2.x upload exception handling putObject method error codes NovaCloud object storage error handling'
+[2026-10-10 19:25:58] [INFO] [agent_execution]: [Agent] question_id=novacloud_W11-LEGACY-V2 step=5 action=tool_call:semantic_vector_search input_summary="args={'query': 'novacloud-sdk 2.x error handling put_object', 'top_k': 5, 'document_id': None}" result_summary="tool=semantic_vector_search" latency_ms=2242.3 tokens=2758 cost=$0.00021
+[2026-10-10 19:25:58] [WARNING] [llm_client]: Groq model openai/gpt-oss-120b cooling down for 20s (rate limit reached (429))
+[2026-10-10 19:25:58] [WARNING] [llm_client]: Groq model openai/gpt-oss-120b failed: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m4d13rxrebsvrqkx1xtrc8q8` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 6197, Requested 4406. Please try again in 19.5225s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+[2026-10-10 19:25:59] [INFO] [agent_execution]: [Agent] question_id=novacloud_W11-LEGACY-V2 step=6 action=tool_call:summarize_context input_summary="args={'focus_topic': 'upload file to bucket novacloud-sdk 2.x', 'text': '# Uploading files to a bucket with the NovaCloud Python SDK\n\nApplies to: novacloud-sdk 2.x\nLast updated: 2024-03-11\n\nThis guide shows how to upload a file to a NovaObject bucket from Python, how to set metadata on the uploaded\nfile, and how to download it again.\n\n## Install and connect\n\nInstall the SDK with pip:\n\n    pip install novacloud-sdk==2.9.4\n\nCreate a client with your API key:\n\n    from novacloud import NovaClient\n\n    client = NovaClient.connect("YOUR_API_KEY", region="us-east")\n\n## Upload a file to a bucket\n\nUse put_object to upload a file to a bucket. Pass the bucket name, the object key and the file contents:\n\n    with open("report.pdf", "rb") as f:\n        client.put_object("my-bucket", "reports/report.pdf", f.read())\n\nTo set metadata on the uploaded file, pass a metadata dictionary:\n\n    client.put_object("my-bucket", "reports/report.pdf", data, metadata={"owner": "finance"})\n\nput_object reads the whole file into memory, so for files larger than 100 MB use put_object_multipart.\n\n## Download a file\n\n    data = client.get_object("my-bucket", "reports/report.pdf")\n\n## Errors\n\nput_object raises NovaError when the bucket does not exist or the API key cannot write to it.'}" result_summary="tool=summarize_context" latency_ms=1146.1 tokens=3909 cost=$0.00037
+[2026-10-10 19:25:59] [INFO] [agent_execution]: [Agent] question_id=novacloud_W11-LEGACY-V2 termination=max_tokens total_steps=6 total_tokens=9546 total_cost=$0.00082
+[2026-10-10 19:26:01] [INFO] [agent_execution]: [Agent] question_id=final step=7 action=generate_answer input_summary="citations=17" result_summary="answer_length=2038" latency_ms=1616.4 tokens=2537 cost=$0.00031
+Result: PASSED (Score: 1.0) All required strings present, no forbidden ones.
+Generated Answer: **Uploading a file with NovaCloud SDK 2.x**
+
+Below is a minimal, working example that works with **novacloud‑sdk 2.x** (e.g., 2.9.4).  
+It shows how t...
+
+================ EVALUATION SUMMARY ================
+Prompt version: rag-v1.1   Suite: drill
+Total Questions: 5
+Passed: 4 (80.0%)
+Failed: 1 (20.0%)
+  PASS  Q1                 Matched 4/4 key concept terms (100%).
+  PASS  Q7                 Matched 5/5 key concept terms (100%).
+  PASS  Q12                Matched 1/1 key concept terms (100%).
+  FAIL  W11-DEPRECATED-1   contains forbidden ['put_object', 'NovaClient.connect']
+  PASS  W11-LEGACY-V2      All required strings present, no forbidden ones.
+SUITE RESULT: 4/5 passed
+
+Detailed evaluation results written to: D:\From-c-drive\.gemini\antigravity\scratch\rag-fullstack-app\backend\results\week11\eval_green.json

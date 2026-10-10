@@ -16,6 +16,8 @@ class ChatRequest(BaseModel):
     provider: Optional[str] = "gemini"  # "gemini", "openai", or "auto"
     search_mode: Optional[str] = "hybrid"  # "hybrid", "vector", or "bm25"
     mode: Optional[str] = "compare"  # "compare", "agent", "team", "workflow", or "standard"
+    session_id: Optional[str] = None  # the client's chat id, logged with the request trace
+    user_id: Optional[str] = None  # used in the trace only when no valid auth token is sent
 
 
 class McpToolResult(BaseModel):
@@ -64,4 +66,5 @@ class ChatResponse(BaseModel):
     workflow_result: Optional[SystemExecutionResult] = None
     comparison: Optional[ComparisonMetrics] = None
     mcp_results: List[McpToolResult] = []
+    trace_id: Optional[str] = None  # key of this request's record in logs/requests.jsonl
 

@@ -35,3 +35,8 @@ Thumbs.db
 # Logs & Data outputs
 *.log
 backend/logs/*.log
+
+# Week 11: request traces hold user questions and answers; export single traces with scripts/find_trace.py --show
+backend/logs/requests.jsonl
+# venv built by the previous Windows account (its Python is not on this machine)
+backend/venv_old_softsuave/

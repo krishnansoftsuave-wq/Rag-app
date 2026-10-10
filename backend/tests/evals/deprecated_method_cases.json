@@ -1,0 +1,19 @@
+[
+  {
+    "id": "W11-DEPRECATED-1",
+    "category": "code_sample",
+    "origin": "Week 11 support drill: a dev reported a code sample that used a deprecated method",
+    "question": "Show me Python code to upload a file to a bucket with the NovaCloud SDK.",
+    "expected": "Use the 3.x Client and client.objects.upload(bucket, key, file).",
+    "must_contain": ["objects.upload"],
+    "must_not_contain_in_code": ["put_object", "NovaClient.connect"]
+  },
+  {
+    "id": "W11-LEGACY-V2",
+    "category": "code_sample",
+    "origin": "Guard for the fix: users pinned to SDK 2.x must still get the 2.x method",
+    "question": "We are pinned to novacloud-sdk 2.x and cannot upgrade yet. How do we upload a file to a bucket on 2.x?",
+    "expected": "On 2.x, client.put_object() still works; pin novacloud-sdk<3.0.",
+    "must_contain": ["put_object"]
+  }
+]

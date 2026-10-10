@@ -1,4 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from typing import Any, Dict, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.security import HTTPAuthorizationCredentials
 from app.schemas.chat import (
     ChatRequest,
     ChatResponse,
@@ -13,6 +16,10 @@ from app.agents.team.team_agent import TeamRAGAgent
 from app.workflows.fixed_rag_workflow import FixedRAGWorkflow
 from app.agents.state import AgentState
 from app.services.llm.client import track_usage
+from app.services.llm.prompts import PROMPT_VERSION
+from app.core.security import decode_access_token, security_bearer
+from app.core.tracing import classify_input, start_trace
+from app.services.retrieval.version_policy import question_scope
 
 router = APIRouter()
 agent_service = AdaptiveRAGAgent()
@@ -120,14 +127,57 @@ def _compute_comparison(agent_res: SystemExecutionResult, workflow_res: SystemEx
     )
 
 
+def _caller(credentials: Optional[HTTPAuthorizationCredentials], request: ChatRequest) -> Dict[str, Any]:
+    """Who asked, for the trace: the signed-in user if the token is valid, else the id the client sent, else anonymous.
+    /chat stays open to guests, so a bad token is logged rather than rejected."""
+    if credentials and credentials.credentials:
+        try:
+            payload = decode_access_token(credentials.credentials)
+            return {"user_id": payload.get("sub") or "unknown", "username": payload.get("username")}
+        except HTTPException:
+            return {"user_id": request.user_id or "invalid_token", "username": None}
+    return {"user_id": request.user_id or "anonymous", "username": None}
+
+
 # Plain `def` so FastAPI runs the blocking agent/LLM calls in a worker thread instead of freezing the event loop
 @router.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest):
+def chat(
+    request: ChatRequest,
+    response: Response,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_bearer),
+):
     if not request.question or not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty")
 
-    doc_id = request.doc_ids[0] if request.doc_ids else None
     mode = (request.mode or "agent").lower()
+    # One trace record per request (logs/requests.jsonl): who asked what, which chunks were retrieved, what was
+    # answered, and the latency, tokens and cost of every step
+    with start_trace(
+        mode=mode,
+        **_caller(credentials, request),
+        session_id=request.session_id,
+        prompt_version=PROMPT_VERSION,
+        query=request.question,
+        input_type=classify_input(request.question),
+        doc_ids=request.doc_ids,
+        search_mode=request.search_mode,
+    ) as trace:
+        with question_scope(request.question):
+            result = _answer(request, mode)
+        systems = {r.system: r for r in (result.agent_result, result.team_result, result.workflow_result) if r}
+        primary = systems.get(mode)
+        trace.set(
+            answer=result.answer,
+            termination_reason=primary.termination_reason if primary else None,
+            system_answers={name: r.answer for name, r in systems.items()} if len(systems) > 1 else None,
+        )
+    result.trace_id = trace.trace_id
+    response.headers["X-Trace-Id"] = trace.trace_id
+    return result
+
+
+def _answer(request: ChatRequest, mode: str) -> ChatResponse:
+    doc_id = request.doc_ids[0] if request.doc_ids else None
 
     if mode == "agent":
         _, agent_res = _run_measured("agent", agent_service, request.question, doc_id)

@@ -1,5 +1,6 @@
 import time
 from typing import Optional, Dict, Any
+from app.services.retrieval.version_policy import question_scope
 from app.agents.state import AgentState
 from app.agents.tools import (
     search_document,
@@ -10,6 +11,7 @@ from app.agents.tools import (
 from app.agents.rag_agent import calculate_llm_cost
 from app.services import llm_service
 from app.schemas.chat import SourceCitation
+from app.core.tracing import span
 
 
 class FixedRAGWorkflow:
@@ -24,6 +26,11 @@ class FixedRAGWorkflow:
         question_id: str = "q_fixed",
         top_k: int = 4
     ) -> AgentState:
+        # Archived docs are searched only if the question asks about an older version (retrieval/version_policy.py)
+        with question_scope(question):
+            return self._run(question, document_id, question_id, top_k)
+
+    def _run(self, question: str, document_id: Optional[str], question_id: str, top_k: int) -> AgentState:
         state = AgentState(question=question, document_id=document_id)
         accumulated_chunks: Dict[str, Dict[str, Any]] = {}
 
@@ -78,7 +85,8 @@ class FixedRAGWorkflow:
         # ---------------------------------------------------------------------
         start_t3 = time.time()
         combined_context = "\n\n".join([c["full_content"] for c in accumulated_chunks.values()])
-        val_res = validate_evidence(question=question, retrieved_context=combined_context)
+        with span("tool:validate_evidence", stage="tool"):
+            val_res = validate_evidence(question=question, retrieved_context=combined_context)
         lat3 = (time.time() - start_t3) * 1000
 
         in_tok3 = val_res.get("input_tokens", 0)
